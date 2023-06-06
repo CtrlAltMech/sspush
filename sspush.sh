@@ -34,7 +34,7 @@ echo "Your most recent file is...$(find_file)"
 
 #Update the name to 10 random characters
 random_name () {
-	echo $RANDOM | md5 | head -c 10; echo;
+	echo $RANDOM | md5sum | head -c 8; echo;
 }
 
 
