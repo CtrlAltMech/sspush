@@ -8,9 +8,14 @@
 # by mech
 #
 
-if [[ -n $1 && "$1" == "-n" ]]; then
-	args="n"
-fi
+SSFILEPATH=
+REMOTEDIR=
+USERNAME=
+KEYPATH=
+PORT=
+SERVER=
+BASELINK=
+INTERACTIVE=
 
 # Find the most recent file
 # TODO set up arguments to push stuff outside of most recent screenshot
