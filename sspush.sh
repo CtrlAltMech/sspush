@@ -16,6 +16,15 @@ PORT=
 SERVER=
 BASELINK=
 INTERACTIVE=
+OS= 
+
+# Checks for configuration file
+if [[ -f $HOME/.sspushrc ]]; then
+	echo "Your config file exists"
+else
+	echo "Not there dude"
+	exit 0
+fi
 
 # Find the most recent file
 # TODO set up arguments to push stuff outside of most recent screenshot
@@ -26,6 +35,19 @@ find_file() {
 # Genterate 8 random characters
 random_name () {
 	echo $RANDOM | md5sum | head -c 8; echo;
+}
+
+# Checks what OS this running on
+osCheck () {
+	if [[ "$(uname -s)" == "Darwin" ]]; then
+		OS="Darwin"
+		echo "It's a mac"
+	elif [ "$(uname -s)" == "Linux" ]; then
+		OS="Linux"
+		echo "Its a Linux"
+	else
+		echo "What the fuck is this then?"
+	fi
 }
 
 # Source the configuration file
@@ -59,7 +81,7 @@ elif [ "$(uname -s)" == "Linux" ]; then
 	filename=$(basename "$SSFILEPATH/$(find_file)") # Finds the most recent file and stores it in the filename variable.
 	mv "${SSFILEPATH}$(find_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
 	scp -i $KEYPATH ${SSFILEPATH}$(find_file) $USERNAME@$SERVER:$REMOTEDIR # Transfer that file to the remote server
-	echo "$BASELINK$(find_file)" | xclip -i
+	echo "$BASELINK$(find_file)" | xclip
 	echo "Link to file $BASELINK$(find_file)" # Feedback to see the link
 else
 	echo "Well...what is this then?"
