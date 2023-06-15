@@ -26,6 +26,20 @@ else
 	exit 0
 fi
 
+confmake () {
+	read -p "No config file found. Would you like to create one? (y/n)\n> " confChoice
+	while [[ $confChoice != "y" || "n" || "Y" || "N" ]]; do
+		read -p "Not a valid choice. Would you like to create a config file? (y/n)\n> " confChoice
+	done
+	if [[ $confChoice == "y" || "Y" ]]; then
+		echo "This would create the configuration file."
+	elif [[ $confChoice == "n" || "N" ]]; then
+		echo "This would exit the program"
+		exit 0
+	fi
+
+}
+
 # Find the most recent file
 # TODO set up arguments to push stuff outside of most recent screenshot
 find_file() {
@@ -52,6 +66,8 @@ osCheck () {
 
 # Source the configuration file
 . $HOME/.sspushrc
+
+$(confmake)
 
 # Determines what OS this is running on and will do something with that information
 if [[ "$(uname -s)" == "Darwin" ]]; then
