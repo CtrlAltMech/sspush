@@ -18,6 +18,79 @@ BASELINK=
 INTERACTIVE=
 OS= 
 
+# If no configuration file is seen it will prompt to generate one 
+confprompt () {
+    read -p "No config file found. Would you like to create one? (y/n)\n> " confChoice
+    while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
+    do
+        read -p "Not a valid option. Would you like to create a config file? (y/n)\n> " confChoice
+    done
+    if [[ $confChoice =~ (^y$|^Y$) ]]; then
+        echo "You do want to create a config file."
+    elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
+        echo "Goodbye!"
+        exit 0
+    fi
+}
+
+# Creates the configuration file
+confmake () {
+	
+	read -p "Enter the path where you will store local screenshots: " SSFILEPATH
+	read -p "Enter the remote directory the screenshots will be stored: " REMOTEDIR
+	read -p "Enter your username for the remote server: " USERNAME
+	read -p "Enter the path to your private ssh key: " KEYPATH
+	read -p "Enter the ssh port you will be using: " PORT
+	read -p "Enter the IP or domain name of remote server: " SERVER
+	read -p	"$(echo -e 'Enter the Base link URL location (this is the link base that the user will visit.)\nExample https://mysite.net/pics/<your image name>.jpg\n> ')" BASELINK
+	read -p "Do you want desktop notifications turned on? (y/n): " NOTIFICATIONS
+	#read -p "Do you want interactive" INTERACTIVE
+
+	echo -e "\nLocal screenshot location: $SSFILEPATH"
+	echo -e "Remote directory location: $REMOTEDIR"
+	echo -e "Username for remote server: $USERNAME"
+	echo -e "Path to private ssh key: $KEYPATH"
+	echo -e "ssh port: $PORT"
+	echo -e "IP or domain name of remote server: $SERVER"
+	echo -e "Baselink URL: $BASELINK"
+	echo -e "Desktop notifications on?: $NOTIFICATIONS\n"
+
+	read -p "Does this look correct?(y/n): " confirmation
+	if [[ $confirmation =~ (^y$|^Y$) ]]; then
+		# This will create the file and put the information in
+		echo "It looks correct"
+	elif [[ $confirmation =~ (^n$|^N$) ]]; then
+		# This will prompt for ways to fix the issues
+		echo "It doesn't look correct"
+	else
+		# Catch all for wrong input, might add a quit option
+		echo "Wrong input format"
+	fi
+}
+
+# Find the most recent file
+find_file() {
+	ls -Art $SSFILEPATH | tail -n 1
+}
+
+# Genterate 8 random characters
+random_name () {
+	echo $RANDOM | md5sum | head -c 8; echo;
+}
+
+# Checks what OS this running on
+osCheck () {
+	if [[ "$(uname -s)" == "Darwin" ]]; then
+		OS="Darwin"
+		echo "It's a mac"
+	elif [ "$(uname -s)" == "Linux" ]; then
+		OS="Linux"
+		echo "Its a Linux"
+	else
+		echo "What the fuck is this then?"
+	fi
+}
+
 # Checks for configuration file
 if [[ -f $HOME/.sspushrc ]]; then
 	echo "Your config file exists"
@@ -26,19 +99,7 @@ else
 	exit 0
 fi
 
-confprompt () {
-    read -p "No config file found. Would you like to create one? (y/n)\n> " confChoice
-    echo $confChoice
-    while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
-    do
-        read -p "Not a valid option. Would you like to create a config file? (y/n)\n> " confChoice
-    done
-    if [[ $confChoice =~ (^y$|^Y$) ]]; then
-        echo "You do want to create a config file."
-    elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
-        echo "You don't want to create a config file"
-    fi
-}
+
 
 # Find the most recent file
 # TODO set up arguments to push stuff outside of most recent screenshot
