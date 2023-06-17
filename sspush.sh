@@ -21,13 +21,15 @@ OS=
 
 # If no configuration file is seen it will prompt to generate one 
 confprompt () {
-    read -p "No config file found. Would you like to create one? (y/n)\n> " confChoice
+    read -p "$(echo -e 'No config file found. Would you like to create one? (y/n)\n> ')" confChoice
+    
     while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
     do
         read -p "Not a valid option. Would you like to create a config file? (y/n)\n> " confChoice
     done
     if [[ $confChoice =~ (^y$|^Y$) ]]; then
         echo "You do want to create a config file."
+        confmake
     elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
         echo "Goodbye!"
         exit 0
@@ -112,14 +114,6 @@ osCheck () {
 	fi
 }
 
-# Checks for configuration file
-if [[ -f $CONFIG ]]; then
-	echo "Your config file exists"
-else
-	echo "Not there dude"
-	exit 0
-fi
-
 
 
 # Find the most recent file
@@ -149,8 +143,8 @@ osCheck () {
 if [[ -f $CONFIG ]]; then
 	echo "Your config file exists"
 else
-	echo "Not there dude"
-	exit 0
+	echo "No conf found."
+	confprompt
 fi
 
 # Source the configuration file
