@@ -8,6 +8,7 @@
 # by mech
 #
 
+CONFIG="$HOME/.sspushrc"
 SSFILEPATH=
 REMOTEDIR=
 USERNAME=
@@ -44,7 +45,6 @@ confmake () {
 	read -p "Enter the IP or domain name of remote server: " SERVER
 	read -p	"$(echo -e 'Enter the Base link URL location (this is the link base that the user will visit.)\nExample https://mysite.net/pics/<your image name>.jpg\n> ')" BASELINK
 	read -p "Do you want desktop notifications turned on? (y/n): " NOTIFICATIONS
-	#read -p "Do you want interactive" INTERACTIVE
 
 	echo -e "\nLocal screenshot location: $SSFILEPATH"
 	echo -e "Remote directory location: $REMOTEDIR"
@@ -56,12 +56,32 @@ confmake () {
 	echo -e "Desktop notifications on?: $NOTIFICATIONS\n"
 
 	read -p "Does this look correct?(y/n): " confirmation
+
 	if [[ $confirmation =~ (^y$|^Y$) ]]; then
 		# This will create the file and put the information in
-		echo "It looks correct"
+		touch $CONFIG
+		echo -e "# Config file for sspush\n" >> $CONFIG
+		echo -e "# Filepath where screenshots are stored" >> $CONFIG
+		echo -e "SSFILEPATH=\"$SSFILEPATH\"\n" >> $CONFIG
+		echo -e "# Remote directory where screenshots will be sent" >> $CONFIG
+		echo -e "REMOTEDIR=\"$REMOTEDIR\"\n" >> $CONFIG
+		echo -e "# Username for access to server" >> $CONFIG
+		echo -e "USERNAME=\"$USERNAME\"\n" >> $CONFIG
+		echo -e "# Private key location (script only works with ssh keys)" >> $CONFIG
+		echo -e "KEYPATH=\"$KEYPATH\"\n" >> $CONFIG
+		echo -e "# SSH port" >> $CONFIG
+		echo -e "PORT=\"$PORT\"\n" >> $CONFIG
+		echo -e "# Server IP or DNS name" >> $CONFIG
+		echo -e "SERVER=\"$SERVER\"\n" >> $CONFIG
+		echo -e "# Base link location (this is the link base that the user will visit. Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
+		echo -e "BASELINK=\"$BASELINK\"\n" >> $CONFIG
+		echo -e "# Allow/Deny desktop notifications" >> $CONFIG
+		echo -e "NOTIFICATIONS=\"$NOTIFICATIONS\"" >> $CONFIG
+		echo -e "\nConfig file created!"
+
 	elif [[ $confirmation =~ (^n$|^N$) ]]; then
 		# This will prompt for ways to fix the issues
-		echo "It doesn't look correct"
+		echo "File not created!"
 	else
 		# Catch all for wrong input, might add a quit option
 		echo "Wrong input format"
@@ -88,11 +108,12 @@ osCheck () {
 		echo "Its a Linux"
 	else
 		echo "What the fuck is this then?"
+		exit 0
 	fi
 }
 
 # Checks for configuration file
-if [[ -f $HOME/.sspushrc ]]; then
+if [[ -f $CONFIG ]]; then
 	echo "Your config file exists"
 else
 	echo "Not there dude"
@@ -102,7 +123,6 @@ fi
 
 
 # Find the most recent file
-# TODO set up arguments to push stuff outside of most recent screenshot
 find_file() {
 	ls -Art $SSFILEPATH | tail -n 1
 }
@@ -125,10 +145,16 @@ osCheck () {
 	fi
 }
 
+# Checks for configuration file
+if [[ -f $CONFIG ]]; then
+	echo "Your config file exists"
+else
+	echo "Not there dude"
+	exit 0
+fi
+
 # Source the configuration file
-. $HOME/.sspushrc
-
-
+. $CONFIG
 
 # Determines what OS this is running on and will do something with that information
 if [[ "$(uname -s)" == "Darwin" ]]; then
