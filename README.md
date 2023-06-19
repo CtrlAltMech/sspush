@@ -57,8 +57,8 @@ BASELINK=""
 NOTIFICATIONS=""
 ```
 
-1. Once the configuration file is created it will find the most recent file in the screenshots folder, rename it, and push it to the remote server.
-2. A link will be created and printed to the screen as well as copied to your clipboard.
+2. Once the configuration file is created it will find the most recent file in the screenshots folder, rename it, and push it to the remote server.
+3. A link will be created and printed to the screen as well as copied to your clipboard.
 
 ## Contributing
 
