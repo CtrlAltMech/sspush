@@ -151,9 +151,10 @@ osCheck () {
 # Start of logic
 confCheck # Check for a config
 osCheck # Check the OS
-find_file # Checks if the screenshots folder is empty
+
 
 . $CONFIG # Source the config file
+find_file # Checks if the screenshots folder is empty
 echo "Your most recent file is...$(find_file)"
 filename=$(basename "$SSFILEPATH/$(find_file)") # Finds the most recent file without the extension
 mv "${SSFILEPATH}$(find_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
