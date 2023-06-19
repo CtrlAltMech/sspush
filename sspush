@@ -126,7 +126,12 @@ osCheck () {
 
 # Find the most recent file
 find_file() {
-	 ls -Art $SSFILEPATH | tail -n 1
+	if [ "$(ls -A $SSFILEPATH)" ]; then
+		ls -Art $SSFILEPATH | tail -n 1
+	else
+		echo "Folder is empty. Exiting..."
+		exit 0
+	fi
 }
 
 # Checks what OS this running on
@@ -146,6 +151,8 @@ osCheck () {
 # Start of logic
 confCheck # Check for a config
 osCheck # Check the OS
+find_file # Checks if the screenshots folder is empty
+
 . $CONFIG # Source the config file
 echo "Your most recent file is...$(find_file)"
 filename=$(basename "$SSFILEPATH/$(find_file)") # Finds the most recent file without the extension
