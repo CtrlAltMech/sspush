@@ -1,7 +1,4 @@
 # sspush - A screenshot sharing utility
-
----
-
 sspush is intended to make it simple to upload and share screenshots/images via a public link.
 
 ## Requirements
