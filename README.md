@@ -10,7 +10,7 @@ sspush is intended to make it simple to upload and share screenshots/images via 
 
 ## Installation
 
-To use the sspush bash, follow the instructions below:
+To use the sspush, follow the instructions below:
 
 1. Clone the sspush repository to your local machine using the command: 
     
@@ -24,7 +24,7 @@ To use the sspush bash, follow the instructions below:
 
 In its current state, sspush will only push the most recent file in your specified screenshots folder, and no arguments can be specified. More features will be available in the development branch, but may not work fully.
 
-1. On first use (when no config file is present) you will be prompted to create one to generate the file.
+1. On first use (when no config file is present) you will be prompted to generate an empty configuration file.
 
 ```bash
 # Config file for sspush
@@ -54,8 +54,9 @@ BASELINK=""
 NOTIFICATIONS=""
 ```
 
-2. Once the configuration file is created it will find the most recent file in the screenshots folder, rename it, and push it to the remote server.
-3. A link will be created and printed to the screen as well as copied to your clipboard.
+2. Once the configuration file is generated you will need to enter all approprite information.
+3. When the config is filled out run the script again and the most recent screenshot will be uploaded.
+4. A link will copied to your clipboard as well as printed out to the terminal.
 
 ## Contributing
 
