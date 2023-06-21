@@ -24,26 +24,15 @@ BASELINK=
 INTERACTIVE=
 OS= 
 
-# Checks for configuration file
-confCheck () {
-    if [[ -f $CONFIG ]]; then
-    	:
-	else
-	    echo "No conf found."
-		confprompt
-	fi	
-}
-
 # If no configuration file is seen it will prompt to generate one 
 confprompt () {
-    read -p "No config file found. Would you like to create one? (y/n): " confChoice
+    read -p "No configuration file found. Would you like to create one? (y/n): " confChoice
     
     while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
     do
         read -p "Not a valid option. Would you like to create a config file? (y/n): " confChoice
     done
     if [[ $confChoice =~ (^y$|^Y$) ]]; then
-        echo "You do want to create a config file."
         confmake
     elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
         echo "Goodbye!"
@@ -96,7 +85,7 @@ osCheck () {
 }
 
 # Find the most recent file
-find_file() {
+find_recent_file() {
 	if [ "$(ls -A $SSFILEPATH)" ]; then
 		ls -Art $SSFILEPATH | tail -n 1
 	else
@@ -120,19 +109,20 @@ osCheck () {
 
 
 # Start of logic
-confCheck # Check for a config
 osCheck # Check the OS
-
-
-. $CONFIG # Source the config file
-find_file # Checks if the screenshots folder is empty
-echo "Your most recent file is...$(find_file)"
-filename=$(basename "$SSFILEPATH/$(find_file)") # Finds the most recent file without the extension
-mv "${SSFILEPATH}$(find_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
-scp -i $KEYPATH ${SSFILEPATH}$(find_file) $USERNAME@$SERVER:$REMOTEDIR # Transfer that file to the remote server
-if [[ $OS == "Darwin" ]]; then 
-	echo "$BASELINK$(find_file)" | pbcopy # Copies to macOS keyboard
-elif [[ $OS == "Linux" ]]; then
-	echo "$BASELINK$(find_file)" | xclip # Copies to xclip keyboard
+if [[ -f $CONFIG ]]; then
+	. $CONFIG # Source the config file
+	find_recent_file # finds latest file or exits if empty
+	echo "Your most recent file is...$(find_recent_file)"
+	filename=$(basename "$SSFILEPATH/$(find_recent_file)") # Finds the most recent file without the extension
+	mv "${SSFILEPATH}$(find_recent_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
+	scp -i $KEYPATH ${SSFILEPATH}$(find_recent_file) $USERNAME@$SERVER:$REMOTEDIR # Transfer that file to the remote server
+	if [[ $OS == "Darwin" ]]; then 
+		echo "$BASELINK$(find_recent_file)" | pbcopy # Copies to macOS keyboard
+	elif [[ $OS == "Linux" ]]; then
+		echo "$BASELINK$(find_recent_file)" | xclip # Copies to xclip keyboard
+	fi
+echo "Link to file $BASELINK$(find_recent_file) has been copied to clipboard!"
+else
+	confprompt
 fi
-echo "Link to file $BASELINK$(find_file) has been copied to clipboard!"
