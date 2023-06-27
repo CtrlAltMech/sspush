@@ -70,32 +70,21 @@ random_name () {
 	echo $RANDOM | md5sum | head -c 8; echo;
 }
 
-# Checks what OS this running on
-osCheck () {
-	if [[ "$(uname -s)" == "Darwin" ]]; then
-		OS="Darwin"
-		echo "It's a mac"
-	elif [[ "$(uname -s)" == "Linux" ]]; then
-		OS="Linux"
-		echo "Its a Linux"
+# Finds the file to push to remote server 
+find_file() {
+	. $CONFIG # Source the config file
+	echo $SSFILEPATH
+	echo $1
+	if [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -z "$1" ]]; then
+		echo "THIS IS EQUAL TO SSFILEPATH"
+		found_file=$(ls -Art $SSFILEPATH | tail -n 1)
+	elif [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -n "$1" ]]; then
+		found_file="$1"
 	else
-		echo "What the fuck is this then?"
+		echo "FILE NOT FOUND!"
 		exit 0
 	fi
-}
 
-# Find the most recent file
-find_recent_file() {
-	if [[ "$(ls -A $SSFILEPATH)" ]]; then
-		ls -Art $SSFILEPATH | tail -n 1
-	else
-		echo "Folder is empty. Exiting..."
-		exit 0
-	fi
-}
-
-find_selected_file() {
-	if
 }
 
 # Checks what OS this running on
@@ -135,10 +124,16 @@ osCheck () {
 # Start of test logic
 osCheck # Check the OS
 
-if [[ -f $CONFIG ]] && [[ $1 == "-s" ]]; then
-	
+if [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
+	echo "Argument provided"
+	find_file $2
+	echo "$found_file"
+elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then
+	echo "NO ARGUMENTS"
+	find_file
+	echo "$found_file"
 else
-	echo "This didn't work."
+	echo "not a proper option"
 fi
 
 
