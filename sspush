@@ -92,8 +92,11 @@ find_file() {
 	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
 	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
 	    echo "This is the original file $orig_file"
-	elif [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
-		realpath $1
+	elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+		orig_file="$1"
+		name_gen "$1"
+		echo "$generated_name"
+		echo "This is the selected file $(basename "$1")"
 	else
 		echo "FILE NOT FOUND!"
 		exit 0
@@ -119,8 +122,11 @@ if ! [[ -f $CONFIG ]]; then
 	conf_prompt
 elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
 	echo "Argument provided TEST LOGIC"
-	find_file $2
+	echo "$#"
+	echo "$2"
+	find_file "$2"
 	#echo "File selected to be pushed is...$(find_file)"
+	main_logic
 elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
 	find_file
 	echo "Your most recent file is...$orig_file"
