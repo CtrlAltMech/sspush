@@ -89,9 +89,8 @@ name_gen () {
 find_file() {
 	. $CONFIG # Source the config file
 	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
-	    #ls -Art $SSFILEPATH | tail -n 1
 	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
-	    name_gen
+	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
 	    echo "This is the original file $orig_file"
 	elif [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
 		realpath $1
@@ -104,10 +103,9 @@ find_file() {
 
 # Takes all the generated information and pushes it to the server
 main_logic () {
-	#mv "${SSFILEPATH}$(find_recent_file)" "${SSFILEPATH}$(random_name).${found_file##*.}"
-	scp -i $KEYPATH $orig_file $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
+	scp -i $KEYPATH "$orig_file" $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
 	if [[ $OS == "Darwin" ]]; then 
-		echo "$BASELINK$($generated_name)" | pbcopy # Copies to macOS keyboard
+		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
 	elif [[ $OS == "Linux" ]]; then
 		echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
 	fi
@@ -121,35 +119,15 @@ if ! [[ -f $CONFIG ]]; then
 	conf_prompt
 elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
 	echo "Argument provided TEST LOGIC"
-	#find_file $2
+	find_file $2
 	#echo "File selected to be pushed is...$(find_file)"
 elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
-	echo "No Argument provided TEST LOGIC"
 	find_file
 	echo "Your most recent file is...$orig_file"
 	main_logic
 else
 	echo "not a proper option"
 fi
-
-# Start of logic
-# osCheck # Check the OS
-# if [[ -f $CONFIG ]]; then
-# 	. $CONFIG # Source the config file
-# 	find_recent_file # finds latest file or exits if empty
-# 	echo "Your most recent file is...$(find_recent_file)"
-# 	filename=$(basename "$SSFILEPATH/$(find_recent_file)") # Finds the most recent file without the extension
-# 	mv "${SSFILEPATH}$(find_recent_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
-# 	scp -i $KEYPATH ${SSFILEPATH}$(find_recent_file) $USERNAME@$SERVER:$REMOTEDIR # Transfer that file to the remote server
-# 	if [[ $OS == "Darwin" ]]; then 
-# 		echo "$BASELINK$(find_recent_file)" | pbcopy # Copies to macOS keyboard
-# 	elif [[ $OS == "Linux" ]]; then
-# 		echo "$BASELINK$(find_recent_file)" | xclip # Copies to xclip keyboard
-# 	fi
-# echo "Link to file $BASELINK$(find_recent_file) has been copied to clipboard!"
-# else
-# 	confprompt
-# fi
 
 
 
