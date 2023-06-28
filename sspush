@@ -25,7 +25,7 @@ INTERACTIVE=
 OS= 
 
 # If no configuration file is seen it will prompt to generate one 
-confprompt () {
+conf_prompt () {
     read -p "No configuration file found. Would you like to create one? (y/n): " confChoice
     
     while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
@@ -33,7 +33,7 @@ confprompt () {
         read -p "Not a valid option. Would you like to create a config file? (y/n): " confChoice
     done
     if [[ $confChoice =~ (^y$|^Y$) ]]; then
-        confmake
+        conf_make
     elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
         echo "Goodbye!"
         exit 0
@@ -41,7 +41,7 @@ confprompt () {
 }
 
 # Creates the configuration file
-confmake () {
+conf_make () {
 	
 	touch $CONFIG
 	echo -e "# Config file for sspush\n" > $CONFIG
@@ -65,30 +65,8 @@ confmake () {
 	exit 0
 }
 
-# Generate 8 random characters
-random_name () {
-	echo $RANDOM | md5sum | head -c 8; echo;
-}
-
-# Finds the file to push to remote server 
-find_file() {
-	. $CONFIG # Source the config file
-	echo $SSFILEPATH
-	echo $1
-	if [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -z "$1" ]]; then
-		echo "THIS IS EQUAL TO SSFILEPATH"
-		found_file=$(ls -Art $SSFILEPATH | tail -n 1)
-	elif [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -n "$1" ]]; then
-		found_file="$1"
-	else
-		echo "FILE NOT FOUND!"
-		exit 0
-	fi
-
-}
-
 # Checks what OS this running on
-osCheck () {
+os_Check () {
 	if [[ "$(uname -s)" == "Darwin" ]]; then
 		OS="Darwin"
 	elif [[ "$(uname -s)" == "Linux" ]]; then
@@ -99,7 +77,60 @@ osCheck () {
 	fi
 }
 
+# Creates the new filename for the remote destination
+name_gen () {
+    filename=$1
+    extension=${filename##*.}
+    filename=$(echo $RANDOM | md5sum | head -c 8; echo;)
+    generated_name="$filename.$extension"
+}
 
+# Finds the file to push to remote server 
+find_file() {
+	. $CONFIG # Source the config file
+	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+	    #ls -Art $SSFILEPATH | tail -n 1
+	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
+	    name_gen
+	    echo "This is the original file $orig_file"
+	elif [[ "$(ls -A $1 2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+		realpath $1
+	else
+		echo "FILE NOT FOUND!"
+		exit 0
+	fi
+
+}
+
+# Takes all the generated information and pushes it to the server
+main_logic () {
+	#mv "${SSFILEPATH}$(find_recent_file)" "${SSFILEPATH}$(random_name).${found_file##*.}"
+	scp -i $KEYPATH $orig_file $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
+	if [[ $OS == "Darwin" ]]; then 
+		echo "$BASELINK$($generated_name)" | pbcopy # Copies to macOS keyboard
+	elif [[ $OS == "Linux" ]]; then
+		echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
+	fi
+	echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
+}
+
+# Start of test logic
+os_Check # Check the OS
+
+if ! [[ -f $CONFIG ]]; then
+	conf_prompt
+elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
+	echo "Argument provided TEST LOGIC"
+	#find_file $2
+	#echo "File selected to be pushed is...$(find_file)"
+elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
+	echo "No Argument provided TEST LOGIC"
+	find_file
+	echo "Your most recent file is...$orig_file"
+	main_logic
+else
+	echo "not a proper option"
+fi
 
 # Start of logic
 # osCheck # Check the OS
@@ -119,22 +150,6 @@ osCheck () {
 # else
 # 	confprompt
 # fi
-
-
-# Start of test logic
-osCheck # Check the OS
-
-if [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
-	echo "Argument provided"
-	find_file $2
-	echo "$found_file"
-elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then
-	echo "NO ARGUMENTS"
-	find_file
-	echo "$found_file"
-else
-	echo "not a proper option"
-fi
 
 
 

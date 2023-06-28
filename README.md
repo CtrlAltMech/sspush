@@ -77,3 +77,4 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 - Add argument/options to select a photo, desktop notifications, default image format.Add argument/options to select a photo, desktop notifications, default image format, option to trigger screenshot utility through script.
 - Better error handling.
 - General code refactoring
+- Make it so the screenshots do not need to be renamed locally and then pushed, but rather randomized at the destination.
