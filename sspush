@@ -37,21 +37,21 @@ conf_make () {
 	touch $CONFIG
 	echo -e "# Config file for sspush\n" > $CONFIG
 	echo -e "# Filepath where screenshots are stored" >> $CONFIG
-	echo -e "SSFILEPATH=\"$SSFILEPATH\"\n" >> $CONFIG
+	echo -e "SSFILEPATH=\"\"\n" >> $CONFIG
 	echo -e "# Remote directory where screenshots will be sent" >> $CONFIG
-	echo -e "REMOTEDIR=\"$REMOTEDIR\"\n" >> $CONFIG
+	echo -e "REMOTEDIR=\"\"\n" >> $CONFIG
 	echo -e "# Username for access to server" >> $CONFIG
-	echo -e "USERNAME=\"$USERNAME\"\n" >> $CONFIG
+	echo -e "USERNAME=\"\"\n" >> $CONFIG
 	echo -e "# Private key location (script only works with ssh keys)" >> $CONFIG
-	echo -e "KEYPATH=\"$KEYPATH\"\n" >> $CONFIG
+	echo -e "KEYPATH=\"\"\n" >> $CONFIG
 	echo -e "# SSH port" >> $CONFIG
-	echo -e "PORT=\"$PORT\"\n" >> $CONFIG
+	echo -e "PORT=\"\"\n" >> $CONFIG
 	echo -e "# Server IP or DNS name" >> $CONFIG
-	echo -e "SERVER=\"$SERVER\"\n" >> $CONFIG
-	echo -e "# Base link location (this is the link base that the user will visit. Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
-	echo -e "BASELINK=\"$BASELINK\"\n" >> $CONFIG
+	echo -e "SERVER=\"\"\n" >> $CONFIG
+	echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
+	echo -e "BASELINK=\"\"\n" >> $CONFIG
 	echo -e "# Allow/Deny desktop notifications" >> $CONFIG
-	echo -e "NOTIFICATIONS=\"$NOTIFICATIONS\"" >> $CONFIG
+	echo -e "NOTIFICATIONS=\"\"" >> $CONFIG
 	echo -e "\nConfig file created!"
 	exit 0
 }
