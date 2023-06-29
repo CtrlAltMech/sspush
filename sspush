@@ -57,14 +57,11 @@ conf_make () {
 }
 
 # Checks what OS this is running on
-os_Check () {
-	if [[ "$(uname -s)" == "Darwin" ]]; then
-		OS="Darwin"
+os_check () {
+	if [[ "$(uname -m)" == "Darwin" ]]; then
+		echo "Darwin"
 	elif [[ "$(uname -s)" == "Linux" ]]; then
-		OS="Linux"
-	else
-		echo "Unable to verify OS. Exiting...."
-		exit 1
+		echo "Linux"
 	fi
 }
 
@@ -95,17 +92,19 @@ find_file() {
 # Takes all the generated information and pushes it to the server
 main_logic () {
 	scp -i $KEYPATH "$orig_file" $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
-	if [[ $OS == "Darwin" ]]; then 
+	if [[ $(os_check) == "Darwin" ]]; then
 		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
-	elif [[ $OS == "Linux" ]]; then
+	elif [[ $(os_check) == "Linux" ]]; then
 		echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
+	else
+		echo "Unable to determine OS, nothing copied to clipboard."
+		echo "Link to file $BASELINK$generated_name"
+		exit 1
 	fi
 	echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
 }
 
 # Start of test logic
-os_Check # Check the OS
-
 if ! [[ -f $CONFIG ]]; then
 	conf_prompt
 elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
