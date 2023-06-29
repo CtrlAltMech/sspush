@@ -3,7 +3,7 @@
 # sspush
 # Date: 5/9/2023
 #
-# A tool for macOS and Linux (Eventually) that pushes a screenshot/image 
+# A tool for macOS and Linux that pushes a screenshot/image 
 # to a remote web server of your choosing via scp.
 # 
 # by CtrlAltMech
@@ -13,28 +13,19 @@
 
 set -e
 
-CONFIG="$HOME/.sspushrc"
-SSFILEPATH=
-REMOTEDIR=
-USERNAME=
-KEYPATH=
-PORT=
-SERVER=
-BASELINK=
-INTERACTIVE=
-OS= 
+readonly CONFIG="$HOME/.sspushrc"
 
 # If no configuration file is seen it will prompt to generate one 
 conf_prompt () {
-    read -p "No configuration file found. Would you like to create one? (y/n): " confChoice
+    read -p "No configuration file found. Would you like to create one? (y/n): " conf_choice
     
-    while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
+    while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
     do
-        read -p "Not a valid option. Would you like to create a config file? (y/n): " confChoice
+        read -p "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
     done
-    if [[ $confChoice =~ (^y$|^Y$) ]]; then
+    if [[ $conf_choice =~ (^y$|^Y$) ]]; then
         conf_make
-    elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
+    elif [[ "$conf_choice" =~ (^n$|^N$) ]]; then
         echo "Goodbye!"
         exit 0
     fi

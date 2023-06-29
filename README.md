@@ -55,7 +55,7 @@ NOTIFICATIONS=""
 ```
 
 2. Once the configuration file is generated you will need to enter all approprite information.
-3. When the config is filled out run the script again and the most recent screenshot will be uploaded.
+3. When the config is filled out run the script again and the most recent screenshot will be uploaded (If one exists in the folder).
 4. A link will copied to your clipboard as well as printed out to the terminal.
 
 ## Contributing
@@ -74,7 +74,7 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 
 ## Stuff in the works
 
-- Add argument/options to select a photo, desktop notifications, default image format.Add argument/options to select a photo, desktop notifications, default image format, option to trigger screenshot utility through script.
-- Better error handling.
-- General code refactoring
-- Make it so the screenshots do not need to be renamed locally and then pushed, but rather randomized at the destination.
+- Add desktop notifications option and an option to trigger your screenshot utility through the script.
+- General code refactoring.
+- Add color.
+- Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
