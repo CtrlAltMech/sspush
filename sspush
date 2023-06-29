@@ -3,7 +3,7 @@
 # sspush
 # Date: 5/9/2023
 #
-# A tool for macOS and Linux (Eventually) that pushes a screenshot/image 
+# A tool for macOS and Linux that pushes a screenshot/image 
 # to a remote web server of your choosing via scp.
 # 
 # by CtrlAltMech
@@ -13,116 +13,120 @@
 
 set -e
 
-CONFIG="$HOME/.sspushrc"
-SSFILEPATH=
-REMOTEDIR=
-USERNAME=
-KEYPATH=
-PORT=
-SERVER=
-BASELINK=
-INTERACTIVE=
-OS= 
+readonly CONFIG="$HOME/.sspushrc"
 
 # If no configuration file is seen it will prompt to generate one 
-confprompt () {
-    read -p "No configuration file found. Would you like to create one? (y/n): " confChoice
+conf_prompt () {
+    read -p "No configuration file found. Would you like to create one? (y/n): " conf_choice
     
-    while ! [[ $confChoice =~ (^y$|^Y$|^n$|^N$) ]]
+    while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
     do
-        read -p "Not a valid option. Would you like to create a config file? (y/n): " confChoice
+        read -p "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
     done
-    if [[ $confChoice =~ (^y$|^Y$) ]]; then
-        confmake
-    elif [[ "$confChoice" =~ (^n$|^N$) ]]; then
+    if [[ $conf_choice =~ (^y$|^Y$) ]]; then
+        conf_make
+    elif [[ "$conf_choice" =~ (^n$|^N$) ]]; then
         echo "Goodbye!"
         exit 0
     fi
 }
 
 # Creates the configuration file
-confmake () {
+conf_make () {
 	
 	touch $CONFIG
 	echo -e "# Config file for sspush\n" > $CONFIG
 	echo -e "# Filepath where screenshots are stored" >> $CONFIG
-	echo -e "SSFILEPATH=\"$SSFILEPATH\"\n" >> $CONFIG
+	echo -e "SSFILEPATH=\"\"\n" >> $CONFIG
 	echo -e "# Remote directory where screenshots will be sent" >> $CONFIG
-	echo -e "REMOTEDIR=\"$REMOTEDIR\"\n" >> $CONFIG
+	echo -e "REMOTEDIR=\"\"\n" >> $CONFIG
 	echo -e "# Username for access to server" >> $CONFIG
-	echo -e "USERNAME=\"$USERNAME\"\n" >> $CONFIG
+	echo -e "USERNAME=\"\"\n" >> $CONFIG
 	echo -e "# Private key location (script only works with ssh keys)" >> $CONFIG
-	echo -e "KEYPATH=\"$KEYPATH\"\n" >> $CONFIG
+	echo -e "KEYPATH=\"\"\n" >> $CONFIG
 	echo -e "# SSH port" >> $CONFIG
-	echo -e "PORT=\"$PORT\"\n" >> $CONFIG
+	echo -e "PORT=\"\"\n" >> $CONFIG
 	echo -e "# Server IP or DNS name" >> $CONFIG
-	echo -e "SERVER=\"$SERVER\"\n" >> $CONFIG
-	echo -e "# Base link location (this is the link base that the user will visit. Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
-	echo -e "BASELINK=\"$BASELINK\"\n" >> $CONFIG
+	echo -e "SERVER=\"\"\n" >> $CONFIG
+	echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
+	echo -e "BASELINK=\"\"\n" >> $CONFIG
 	echo -e "# Allow/Deny desktop notifications" >> $CONFIG
-	echo -e "NOTIFICATIONS=\"$NOTIFICATIONS\"" >> $CONFIG
+	echo -e "NOTIFICATIONS=\"\"" >> $CONFIG
 	echo -e "\nConfig file created!"
 	exit 0
 }
 
-# Generate 8 random characters
-random_name () {
-	echo $RANDOM | md5sum | head -c 8; echo;
-}
-
-# Checks what OS this running on
-osCheck () {
+# Checks what OS this is running on
+os_check () {
 	if [[ "$(uname -s)" == "Darwin" ]]; then
-		OS="Darwin"
-		echo "It's a mac"
-	elif [ "$(uname -s)" == "Linux" ]; then
-		OS="Linux"
-		echo "Its a Linux"
-	else
-		echo "What the fuck is this then?"
-		exit 0
+		echo "Darwin"
+	elif [[ "$(uname -s)" == "Linux" ]]; then
+		echo "Linux"
 	fi
 }
 
-# Find the most recent file
-find_recent_file() {
-	if [ "$(ls -A $SSFILEPATH)" ]; then
-		ls -Art $SSFILEPATH | tail -n 1
-	else
-		echo "Folder is empty. Exiting..."
-		exit 0
-	fi
+# Creates the new filename for the remote destination
+name_gen () {
+    local filename=$1
+    local extension=${filename##*.}
+    filename=$(echo $RANDOM | md5sum | head -c 8; echo;)
+    generated_name="$filename.$extension"
 }
 
-# Checks what OS this running on
-osCheck () {
-	if [[ "$(uname -s)" == "Darwin" ]]; then
-		OS="Darwin"
-	elif [ "$(uname -s)" == "Linux" ]; then
-		OS="Linux"
+# Finds the file to push to remote server
+find_file() {
+	. $CONFIG
+	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
+	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
+	elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+		orig_file="$1"
+		name_gen "$1"
 	else
-		echo "What the fuck is this then? Exiting..."
-		exit 0
+		echo "FILE NOT FOUND!"
+		exit 1
 	fi
+
 }
 
-
+# Takes all the curated information, pushes it to the server, provides a link
+push_logic () {
+	scp -i $KEYPATH "$orig_file" $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
+	if [[ $(os_check) == "Darwin" ]]; then
+		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
+	elif [[ $(os_check) == "Linux" ]]; then
+		echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
+	else
+		echo "Unable to determine OS, nothing copied to clipboard."
+		echo "Link to file $BASELINK$generated_name"
+		exit 1
+	fi
+	echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
+}
 
 # Start of logic
-osCheck # Check the OS
-if [[ -f $CONFIG ]]; then
-	. $CONFIG # Source the config file
-	find_recent_file # finds latest file or exits if empty
-	echo "Your most recent file is...$(find_recent_file)"
-	filename=$(basename "$SSFILEPATH/$(find_recent_file)") # Finds the most recent file without the extension
-	mv "${SSFILEPATH}$(find_recent_file)" "${SSFILEPATH}$(random_name).${filename##*.}" # Renames the file to random 8 character string
-	scp -i $KEYPATH ${SSFILEPATH}$(find_recent_file) $USERNAME@$SERVER:$REMOTEDIR # Transfer that file to the remote server
-	if [[ $OS == "Darwin" ]]; then 
-		echo "$BASELINK$(find_recent_file)" | pbcopy # Copies to macOS keyboard
-	elif [[ $OS == "Linux" ]]; then
-		echo "$BASELINK$(find_recent_file)" | xclip # Copies to xclip keyboard
-	fi
-echo "Link to file $BASELINK$(find_recent_file) has been copied to clipboard!"
+if ! [[ -f $CONFIG ]]; then
+	conf_prompt
+elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
+	find_file "$2"
+	echo "Your selected file is $orig_file"
+	push_logic
+elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
+	find_file
+	echo "Your most recent file is...$orig_file"
+	push_logic
 else
-	confprompt
+	echo "Not a valid option."
 fi
+
+
+
+
+
+
+
+
+
+
+
+
