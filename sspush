@@ -65,7 +65,7 @@ conf_make () {
 	exit 0
 }
 
-# Checks what OS this running on
+# Checks what OS this is running on
 os_Check () {
 	if [[ "$(uname -s)" == "Darwin" ]]; then
 		OS="Darwin"
@@ -73,7 +73,7 @@ os_Check () {
 		OS="Linux"
 	else
 		echo "Unable to verify OS. Exiting...."
-		exit 0
+		exit 1
 	fi
 }
 
@@ -91,15 +91,12 @@ find_file() {
 	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
 	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
 	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
-	    echo "This is the original file $orig_file"
 	elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
 		orig_file="$1"
 		name_gen "$1"
-		echo "$generated_name"
-		echo "This is the selected file $(basename "$1")"
 	else
 		echo "FILE NOT FOUND!"
-		exit 0
+		exit 1
 	fi
 
 }
@@ -121,11 +118,8 @@ os_Check # Check the OS
 if ! [[ -f $CONFIG ]]; then
 	conf_prompt
 elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
-	echo "Argument provided TEST LOGIC"
-	echo "$#"
-	echo "$2"
 	find_file "$2"
-	#echo "File selected to be pushed is...$(find_file)"
+	echo "Your selected file is $orig_file"
 	main_logic
 elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
 	find_file
