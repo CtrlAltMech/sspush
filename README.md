@@ -77,4 +77,5 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 - Add desktop notifications option and an option to trigger your screenshot utility through the script.
 - General code refactoring.
 - Add color.
+- Add help option.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
