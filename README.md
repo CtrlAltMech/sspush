@@ -5,7 +5,7 @@ sspush is intended to make it simple to upload and share screenshots/images via 
 
 - ssh keys on local and remote machine (This will not work with a password login)
 - xclip locally (For Linux users)
-- scrot locally (Not currently in use yet, but will be in the development branch)
+- scrot locally (Not currently in use yet, but will be in the development branch eventually)
 - A remote server you have access to
 
 ## Installation
@@ -56,7 +56,7 @@ NOTIFICATIONS=""
 
 2. Once the configuration file is generated you will need to enter all approprite information.
 3. When the config is filled out run the script again and the most recent screenshot will be uploaded (If one exists in the folder).
-4. A link will copied to your clipboard as well as printed out to the terminal.
+4. A link will be copied to your clipboard as well as printed out to the terminal.
 
 ## Contributing
 

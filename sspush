@@ -58,7 +58,7 @@ conf_make () {
 
 # Checks what OS this is running on
 os_check () {
-	if [[ "$(uname -m)" == "Darwin" ]]; then
+	if [[ "$(uname -s)" == "Darwin" ]]; then
 		echo "Darwin"
 	elif [[ "$(uname -s)" == "Linux" ]]; then
 		echo "Linux"
@@ -67,15 +67,15 @@ os_check () {
 
 # Creates the new filename for the remote destination
 name_gen () {
-    filename=$1
-    extension=${filename##*.}
+    local filename=$1
+    local extension=${filename##*.}
     filename=$(echo $RANDOM | md5sum | head -c 8; echo;)
     generated_name="$filename.$extension"
 }
 
-# Finds the file to push to remote server 
+# Finds the file to push to remote server
 find_file() {
-	. $CONFIG # Source the config file
+	. $CONFIG
 	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
 	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
 	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
@@ -89,8 +89,8 @@ find_file() {
 
 }
 
-# Takes all the generated information and pushes it to the server
-main_logic () {
+# Takes all the curated information, pushes it to the server, provides a link
+push_logic () {
 	scp -i $KEYPATH "$orig_file" $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
 	if [[ $(os_check) == "Darwin" ]]; then
 		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
@@ -104,19 +104,19 @@ main_logic () {
 	echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
 }
 
-# Start of test logic
+# Start of logic
 if ! [[ -f $CONFIG ]]; then
 	conf_prompt
 elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
 	find_file "$2"
 	echo "Your selected file is $orig_file"
-	main_logic
+	push_logic
 elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
 	find_file
 	echo "Your most recent file is...$orig_file"
-	main_logic
+	push_logic
 else
-	echo "not a proper option"
+	echo "Not a valid option."
 fi
 
 
