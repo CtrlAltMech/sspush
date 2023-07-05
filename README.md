@@ -60,7 +60,7 @@ NOTIFICATIONS=""
 5. If you wish to do something other then pushing the most recent screenshot, apply the appropriate flag.
 
 ## Flags
-'-s /path/to/image' - Select image option 
+`-s /path/to/image` - Select image option 
 
 ## Contributing
 
