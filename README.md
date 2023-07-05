@@ -58,6 +58,9 @@ NOTIFICATIONS=""
 3. When the config is filled out run the script again and the most recent screenshot will be uploaded (If one exists in the folder).
 4. A link will be copied to your clipboard as well as printed out to the terminal.
 
+## Flags
+''' -s /path/to/image''' - Select image option 
+
 ## Contributing
 
 If you would like to contribute to the sspush project, follow the instructions below:
