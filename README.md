@@ -57,9 +57,10 @@ NOTIFICATIONS=""
 2. Once the configuration file is generated you will need to enter all approprite information.
 3. When the config is filled out run the script again and the most recent screenshot will be uploaded (If one exists in the folder).
 4. A link will be copied to your clipboard as well as printed out to the terminal.
+5. If you wish to do something other then pushing the most recent screenshot, apply the appropriate flag.
 
 ## Flags
-''' -s /path/to/image''' - Select image option 
+'-s /path/to/image' - Select image option 
 
 ## Contributing
 
