@@ -10,9 +10,10 @@
 #
 
 
-
+# Exit on error
 set -e
 
+# Configuration path
 readonly CONFIG="$HOME/.sspushrc"
 
 # If no configuration file is seen it will prompt to generate one 
@@ -21,7 +22,7 @@ conf_prompt () {
     
     while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
     do
-        read -p "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
+        read -pr "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
     done
     if [[ $conf_choice =~ (^y$|^Y$) ]]; then
         conf_make
@@ -34,24 +35,24 @@ conf_prompt () {
 # Creates the configuration file
 conf_make () {
 	
-	touch $CONFIG
-	echo -e "# Config file for sspush\n" > $CONFIG
-	echo -e "# Filepath where screenshots are stored" >> $CONFIG
-	echo -e "SSFILEPATH=\"\"\n" >> $CONFIG
-	echo -e "# Remote directory where screenshots will be sent" >> $CONFIG
-	echo -e "REMOTEDIR=\"\"\n" >> $CONFIG
-	echo -e "# Username for access to server" >> $CONFIG
-	echo -e "USERNAME=\"\"\n" >> $CONFIG
-	echo -e "# Private key location (script only works with ssh keys)" >> $CONFIG
-	echo -e "KEYPATH=\"\"\n" >> $CONFIG
-	echo -e "# SSH port" >> $CONFIG
-	echo -e "PORT=\"\"\n" >> $CONFIG
-	echo -e "# Server IP or DNS name" >> $CONFIG
-	echo -e "SERVER=\"\"\n" >> $CONFIG
-	echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> $CONFIG
-	echo -e "BASELINK=\"\"\n" >> $CONFIG
-	echo -e "# Allow/Deny desktop notifications" >> $CONFIG
-	echo -e "NOTIFICATIONS=\"\"" >> $CONFIG
+	touch "$CONFIG"
+	echo -e "# Config file for sspush\n" > "$CONFIG"
+	echo -e "# Filepath where screenshots are stored" >> "$CONFIG"
+	echo -e "SSFILEPATH=\"\"\n" >> "$CONFIG"
+	echo -e "# Remote directory where screenshots will be sent" >> "$CONFIG"
+	echo -e "REMOTEDIR=\"\"\n" >> "$CONFIG"
+	echo -e "# Username for access to server" >> "$CONFIG"
+	echo -e "USERNAME=\"\"\n" >> "$CONFIG"
+	echo -e "# Private key location (script only works with ssh keys)" >> "$CONFIG"
+	echo -e "KEYPATH=\"\"\n" >> "$CONFIG"
+	echo -e "# SSH port" >> "$CONFIG"
+	echo -e "PORT=\"\"\n" >> "$CONFIG"
+	echo -e "# Server IP or DNS name" >> "$CONFIG"
+	echo -e "SERVER=\"\"\n" >> "$CONFIG"
+	echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> "$CONFIG"
+	echo -e "BASELINK=\"\"\n" >> "$CONFIG"
+	echo -e "# Allow/Deny desktop notifications" >> "$CONFIG"
+	echo -e "NOTIFICATIONS=\"\"" >> "$CONFIG"
 	echo -e "\nConfig file created!"
 	exit 0
 }
@@ -65,6 +66,19 @@ os_check () {
 	fi
 }
 
+# Verify that all configuration variables have been set, error if not
+conf_var_check () {
+    : "${SSFILEPATH:?All configuration variables need to be set at run time.}" 
+    : "${REMOTEDIR:?All configuration variables need to be set a run time.}" 
+    : "${USERNAME:?All configuration variables need to be set a run time.}" 
+    : "${KEYPATH:?All configuration variables need to be set a run time.}" 
+    : "${PORT:?All configuration variables need to be set a run time.}" 
+    : "${SERVER:?All configuration variables need to be set a run time.}" 
+    : "${BASELINK:?All configuration variables need to be set a run time.}" 
+    : "${NOTIFICATIONS:?All configuration variables need to be set a run time.}" 
+    : "${INTERACTIVE:?All configuration variables need to be set a run time.}" 
+} 
+
 # Creates the new filename for the remote destination
 name_gen () {
     local filename=$1
@@ -75,10 +89,11 @@ name_gen () {
 
 # Finds the file to push to remote server
 find_file() {
-	. $CONFIG
-	if [[ "$(ls -A $SSFILEPATH 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
-	    orig_file=$SSFILEPATH$(ls -Art $SSFILEPATH | tail -n 1)
-	    name_gen "$(ls -Art $SSFILEPATH | tail -n 1)"
+	. "$CONFIG"
+    conf_var_check
+	if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+	    orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
+	    name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
 	elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
 		orig_file="$1"
 		name_gen "$1"
@@ -91,7 +106,7 @@ find_file() {
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
-	scp -i $KEYPATH "$orig_file" $USERNAME@$SERVER:$REMOTEDIR$generated_name # Transfer that file to the remote server
+	scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
 	if [[ $(os_check) == "Darwin" ]]; then
 		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
 	elif [[ $(os_check) == "Linux" ]]; then
@@ -118,15 +133,3 @@ elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the mo
 else
 	echo "Not a valid option."
 fi
-
-
-
-
-
-
-
-
-
-
-
-
