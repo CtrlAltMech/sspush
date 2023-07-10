@@ -10,7 +10,7 @@
 #
 
 
-
+# Exit on error
 set -e
 
 # Configuration path
@@ -66,6 +66,19 @@ os_check () {
 	fi
 }
 
+# Verify that all configuration variables have been set, error if not
+conf_var_check () {
+    : "${SSFILEPATH:?All configuration variables need to be set at run time.}" 
+    : "${REMOTEDIR:?All configuration variables need to be set a run time.}" 
+    : "${USERNAME:?All configuration variables need to be set a run time.}" 
+    : "${KEYPATH:?All configuration variables need to be set a run time.}" 
+    : "${PORT:?All configuration variables need to be set a run time.}" 
+    : "${SERVER:?All configuration variables need to be set a run time.}" 
+    : "${BASELINK:?All configuration variables need to be set a run time.}" 
+    : "${NOTIFICATIONS:?All configuration variables need to be set a run time.}" 
+    : "${INTERACTIVE:?All configuration variables need to be set a run time.}" 
+} 
+
 # Creates the new filename for the remote destination
 name_gen () {
     local filename=$1
@@ -77,6 +90,7 @@ name_gen () {
 # Finds the file to push to remote server
 find_file() {
 	. "$CONFIG"
+    conf_var_check
 	if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
 	    orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
 	    name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
