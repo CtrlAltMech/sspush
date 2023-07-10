@@ -1,6 +1,8 @@
 # sspush - A screenshot sharing utility
 sspush is intended to make it simple to upload and share screenshots/images via a public link.
 
+![Example](https://github.com/CtrlAltMech/sspush/assets/7492741/1bafa0f3-9941-4f16-b2ad-031c2ceeab53)
+
 ## Requirements
 
 - ssh keys on local and remote machine (This will not work with a password login)
@@ -21,8 +23,6 @@ To use the sspush, follow the instructions below:
 4. Run the script using the command `./sspush`
 
 ## Usage
-
-In its current state, sspush will only push the most recent file in your specified screenshots folder, and no arguments can be specified. More features will be available in the development branch, but may not work fully.
 
 1. On first use (when no config file is present) you will be prompted to generate an empty configuration file.
 
