@@ -57,6 +57,16 @@ conf_make () {
 	exit 0
 }
 
+# Initial check the config exists and all options set.
+pre_check () {
+    if ! [[ -f $CONFIG ]]; then
+        conf_prompt
+    else
+        . "$CONFIG" # Source the configuration file
+        conf_var_check 
+    fi
+}
+
 # Checks what OS this is running on
 os_check () {
 	if [[ "$(uname -s)" == "Darwin" ]]; then
@@ -90,10 +100,10 @@ name_gen () {
 
 # macOS screencapture tool
 mac_screencapture () {
-   ssname="Screenshot_$(date +"%Y%m%d_%H%M%S").png"
-   # vidname="vidcap_$(date +"%Y%m%d_%H%M%S").mp4"
-   screencapture -i "$ssname"
-   if [[ -e "$ssname" ]]; then
+   default_ssname=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
+   # default_vidname="vidcap_$(date +"%Y%m%d_%H%M%S").mp4"
+   screencapture -i "$default_ssname"
+   if [[ -e "$default_ssname" ]]; then
       echo "All good file made."
    else
       echo "Successfully exited"
@@ -103,8 +113,6 @@ mac_screencapture () {
 
 # Finds the file to push to remote server
 find_file() {
-	. "$CONFIG"
-    conf_var_check
 	if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
 	    orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
 	    name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
@@ -133,16 +141,21 @@ push_logic () {
 }
 
 # Start of logic
-if ! [[ -f $CONFIG ]]; then
-	conf_prompt
-elif [[ -f $CONFIG ]] && [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
+pre_check
+
+if [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
 	find_file "$2"
 	echo "Your selected file is $orig_file"
 	push_logic
-elif [[ -f $CONFIG ]] && [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
+elif [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
 	find_file
 	echo "Your most recent file is...$orig_file"
 	push_logic
+elif [[ "$1" == "-i" ]]; then
+    mac_screencapture
+    find_file
+    echo "Your selected file is $orig_file" 
+    push_logic
 else
 	echo "Not a valid option."
 fi
