@@ -88,6 +88,19 @@ name_gen () {
     generated_name="$filename.$extension"
 }
 
+# macOS screencapture tool
+mac_screencapture () {
+   ssname="Screenshot_$(date +"%Y%m%d_%H%M%S").png"
+   # vidname="vidcap_$(date +"%Y%m%d_%H%M%S").mp4"
+   screencapture -i "$ssname"
+   if [[ -e "$ssname" ]]; then
+      echo "All good file made."
+   else
+      echo "Successfully exited"
+      exit 0
+   fi
+}
+
 # Finds the file to push to remote server
 find_file() {
 	. "$CONFIG"
@@ -102,7 +115,6 @@ find_file() {
 		echo "FILE NOT FOUND!"
 		exit 1
 	fi
-
 }
 
 # Takes all the curated information, pushes it to the server, provides a link
