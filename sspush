@@ -90,7 +90,7 @@ conf_var_check () {
     : "${INTERACTIVE:?$msg}" 
 } 
 
-# Creates the new filename for the remote destination
+# Creates the new randomly generated filename for the remote destination
 name_gen () {
     local filename=$1
     local extension=${filename##*.}
@@ -98,7 +98,7 @@ name_gen () {
     generated_name="$filename.$extension"
 }
 
-# macOS screencapture tool
+# macOS screencapture handler
 mac_screencapture () {
    default_ssname=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
    # default_vidname="vidcap_$(date +"%Y%m%d_%H%M%S").mp4"
@@ -143,13 +143,13 @@ push_logic () {
 # Start of logic
 pre_check
 
-if [[ "$1" == "-s" && -n "$2" ]]; then # -s option allows you to select the image
-	find_file "$2"
-	echo "Your selected file is $orig_file"
-	push_logic
-elif [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
+if [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
 	find_file
 	echo "Your most recent file is...$orig_file"
+	push_logic
+elif [[ "$#" == "1" && -e "$1" ]]; then # No option, only file selected to push
+	find_file "$1"
+	echo "Your selected file is $orig_file"
 	push_logic
 elif [[ "$1" == "-i" ]]; then
     mac_screencapture
