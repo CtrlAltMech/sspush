@@ -12,6 +12,7 @@
 
 # Exit on error
 set -e
+# set -x
 
 # Configuration path
 readonly CONFIG="$HOME/.sspushrc"
@@ -100,15 +101,24 @@ name_gen () {
 
 # macOS screencapture handler
 mac_screencapture () {
-   default_ssname=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
-   # default_vidname="vidcap_$(date +"%Y%m%d_%H%M%S").mp4"
-   screencapture -i "$default_ssname"
-   if [[ -e "$default_ssname" ]]; then
-      echo "All good file made."
+   local option_pattern_full
+   local image_pattern
+   local vid_pattern
+   local file_name
+   option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[gG]?$"
+   image_pattern="^-b$|^-C$|^-i$|^-m$"
+   vid_pattern="^-v[gG]?$"
+   if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
+      file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
+   elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
+      file_name=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
+   elif [[ $1 =~ $option_pattern_full ]] && [[ -n $2 ]]; then
+      file_name="$SSFILEPATH$2"
    else
-      echo "Successfully exited"
-      exit 0
+      echo "Invalid argument."
+      exit 1
    fi
+   screencapture "$1" "$file_name" 
 }
 
 # Finds the file to push to remote server
@@ -151,11 +161,13 @@ elif [[ "$#" == "1" && -e "$1" ]]; then # No option, only file selected to push
 	find_file "$1"
 	echo "Your selected file is $orig_file"
 	push_logic
-elif [[ "$1" == "-i" ]]; then
-    mac_screencapture
+elif [[ $(os_check) == "Darwin" ]]; then
+    mac_screencapture "$1" "$2"
     find_file
     echo "Your selected file is $orig_file" 
     push_logic
+elif [[ $(os_check) == "Linux" ]]; then
+    : # This is just a placeholder for linux support
 else
 	echo "Not a valid option."
 fi
