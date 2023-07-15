@@ -12,7 +12,6 @@
 
 # Exit on error
 set -e
-# set -x
 
 # Configuration path
 readonly CONFIG="$HOME/.sspushrc"
@@ -35,27 +34,27 @@ conf_prompt () {
 
 # Creates the configuration file
 conf_make () {
-	
-	touch "$CONFIG"
-	echo -e "# Config file for sspush\n" > "$CONFIG"
-	echo -e "# Filepath where screenshots are stored" >> "$CONFIG"
-	echo -e "SSFILEPATH=\"\"\n" >> "$CONFIG"
-	echo -e "# Remote directory where screenshots will be sent" >> "$CONFIG"
-	echo -e "REMOTEDIR=\"\"\n" >> "$CONFIG"
-	echo -e "# Username for access to server" >> "$CONFIG"
-	echo -e "USERNAME=\"\"\n" >> "$CONFIG"
-	echo -e "# Private key location (script only works with ssh keys)" >> "$CONFIG"
-	echo -e "KEYPATH=\"\"\n" >> "$CONFIG"
-	echo -e "# SSH port" >> "$CONFIG"
-	echo -e "PORT=\"\"\n" >> "$CONFIG"
-	echo -e "# Server IP or DNS name" >> "$CONFIG"
-	echo -e "SERVER=\"\"\n" >> "$CONFIG"
-	echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> "$CONFIG"
-	echo -e "BASELINK=\"\"\n" >> "$CONFIG"
-	echo -e "# Allow/Deny desktop notifications" >> "$CONFIG"
-	echo -e "NOTIFICATIONS=\"\"" >> "$CONFIG"
-	echo -e "\nConfig file created!"
-	exit 0
+    
+    touch "$CONFIG"
+    echo -e "# Config file for sspush\n" > "$CONFIG"
+    echo -e "# Filepath where screenshots are stored" >> "$CONFIG"
+    echo -e "SSFILEPATH=\"\"\n" >> "$CONFIG"
+    echo -e "# Remote directory where screenshots will be sent" >> "$CONFIG"
+    echo -e "REMOTEDIR=\"\"\n" >> "$CONFIG"
+    echo -e "# Username for access to server" >> "$CONFIG"
+    echo -e "USERNAME=\"\"\n" >> "$CONFIG"
+    echo -e "# Private key location (script only works with ssh keys)" >> "$CONFIG"
+    echo -e "KEYPATH=\"\"\n" >> "$CONFIG"
+    echo -e "# SSH port" >> "$CONFIG"
+    echo -e "PORT=\"\"\n" >> "$CONFIG"
+    echo -e "# Server IP or DNS name" >> "$CONFIG"
+    echo -e "SERVER=\"\"\n" >> "$CONFIG"
+    echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> "$CONFIG"
+    echo -e "BASELINK=\"\"\n" >> "$CONFIG"
+    echo -e "# Allow/Deny desktop notifications" >> "$CONFIG"
+    echo -e "NOTIFICATIONS=\"\"" >> "$CONFIG"
+    echo -e "\nConfig file created!"
+    exit 0
 }
 
 # Initial check the config exists and all options set.
@@ -70,11 +69,11 @@ pre_check () {
 
 # Checks what OS this is running on
 os_check () {
-	if [[ "$(uname -s)" == "Darwin" ]]; then
-		echo "Darwin"
-	elif [[ "$(uname -s)" == "Linux" ]]; then
-		echo "Linux"
-	fi
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        echo "Darwin"
+    elif [[ "$(uname -s)" == "Linux" ]]; then
+        echo "Linux"
+    fi
 }
 
 # Verify that all configuration variables have been set, error if not
@@ -101,63 +100,63 @@ name_gen () {
 
 # macOS screencapture handler
 mac_screencapture () {
-   local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
-   local image_pattern="^-b$|^-C$|^-i$|^-m$"
-   local vid_pattern="^-v[g]?$"
-   local file_name
-   if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
-      file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
-   elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
-      file_name=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
-   elif [[ $1 =~ $option_pattern_full ]] && [[ -n $2 ]]; then
-      file_name="$SSFILEPATH$2"
-   else
-      echo "Invalid argument."
-      exit 1
-   fi
-   screencapture "$1" "$file_name" 
+    local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
+    local image_pattern="^-b$|^-C$|^-i$|^-m$"
+    local vid_pattern="^-v[g]?$"
+    local file_name
+    if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
+       file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
+    elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
+       file_name=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
+    elif [[ $1 =~ $option_pattern_full ]] && [[ -n $2 ]]; then
+       file_name="$SSFILEPATH$2"
+    else
+       echo "Invalid argument."
+       exit 1
+    fi
+    screencapture "$1" "$file_name" 
 }
 
 # Finds the file to push to remote server
 find_file() {
-	if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
-	    orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
-	    name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
-	elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
-		orig_file="$1"
-		name_gen "$1"
-	else
-		echo "FILE NOT FOUND!"
-		exit 1
-	fi
+    if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+        orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
+        name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
+    elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+        orig_file="$1"
+        name_gen "$1"
+    else
+        echo "FILE NOT FOUND!"
+        exit 1
+    fi
 }
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
-	scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
-	if [[ $(os_check) == "Darwin" ]]; then
-		echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
-	elif [[ $(os_check) == "Linux" ]]; then
-		echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
-	else
-		echo "Unable to determine OS, nothing copied to clipboard."
-		echo "Link to file $BASELINK$generated_name"
-		exit 1
-	fi
-	echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
+    scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
+    if [[ $(os_check) == "Darwin" ]]; then
+        echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
+    elif [[ $(os_check) == "Linux" ]]; then
+        echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
+    else
+        echo "Unable to determine OS, nothing copied to clipboard."
+        echo "Link to file $BASELINK$generated_name"
+        exit 1
+    fi
+    echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
 }
 
 # Start of logic
 pre_check
 
 if [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
-	find_file
-	echo "Your most recent file is...$orig_file"
-	push_logic
+    find_file
+    echo "Your most recent file is...$orig_file"
+    push_logic
 elif [[ "$#" == "1" && -e "$1" ]]; then # No option, only file selected to push
-	find_file "$1"
-	echo "Your selected file is $orig_file"
-	push_logic
+    find_file "$1"
+    echo "Your selected file is $orig_file"
+    push_logic
 elif [[ $(os_check) == "Darwin" ]]; then
     mac_screencapture "$1" "$2"
     find_file
@@ -166,5 +165,5 @@ elif [[ $(os_check) == "Darwin" ]]; then
 elif [[ $(os_check) == "Linux" ]]; then
     : # This is just a placeholder for linux support
 else
-	echo "Not a valid option."
+    echo "Not a valid option."
 fi
