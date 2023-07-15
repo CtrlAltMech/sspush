@@ -5,13 +5,13 @@ sspush is intended to make it simple to upload and share screenshots/images/file
 
 ## Requirements
 
+- A remote server you have access to.
 - ssh keys on local and remote machine (This will not work with a password login).
 - [xclip](https://github.com/astrand/xclip) locally (For Linux users).
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users on Wayland).
 - [maim](https://github.com/naelstrof/maim) locally (For Linux users).
 - [slop](https://github.com/naelstrof/slop) locally (For Linux users).
 - [ffmpeg](https://ffmpeg.org/) locally (For Linux users).
-- A remote server you have access to.
 
 ## Installation
 
@@ -50,7 +50,8 @@ PORT=""
 # Server IP or DNS name
 SERVER=""
 
-# Base link location (this is the link base that the user will visit. Example https://mysite.net/pics/<your image name>.jpg
+# Base link location (this is the link base that the user will visit. 
+# Example https://mysite.net/pics/<your image name>.jpg
 BASELINK=""
 
 # Allow/Deny desktop notifications (Not in use yet)
@@ -62,13 +63,13 @@ NOTIFICATIONS=""
 4. A link will be copied to your clipboard as well as printed out to the terminal.
 
 ## Flags
-`sspush` - Will post most recent file/screencapture in screenshots folder (If one exists).
-`sspush -b <optional filename>` - Will post macbook touchbar.
-`sspush -C <optional filename>` - Will post entire screen plus cursor.
-`sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and post.
-`sspush -m <optional filename>` - Will post only main monitor.
-`sspush -v <optional filename>` - Will start video capture on main monitor and post when done.
-`sspush -vg <optional filename>` - Will start video capture with mic capture and post when done.
+- `sspush` - Will post most recent file/screencapture in screenshots folder (If one exists).
+- `sspush -b <optional filename>` - Will post macbook touchbar.
+- `sspush -C <optional filename>` - Will post entire screen plus cursor.
+- `sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and post.
+- `sspush -m <optional filename>` - Will post only main monitor.
+- `sspush -v <optional filename>` - Will start video capture on main monitor and post when done.
+- `sspush -vg <optional filename>` - Will start video capture with mic capture and post when done.
 
 ## Contributing
 I would love to hear if there are any bugs or a requested feature!
