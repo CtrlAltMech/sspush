@@ -35,25 +35,35 @@ conf_prompt () {
 # Creates the configuration file
 conf_make () {
     
-    touch "$CONFIG"
-    echo -e "# Config file for sspush\n" > "$CONFIG"
-    echo -e "# Filepath where screenshots are stored" >> "$CONFIG"
-    echo -e "SSFILEPATH=\"\"\n" >> "$CONFIG"
-    echo -e "# Remote directory where screenshots will be sent" >> "$CONFIG"
-    echo -e "REMOTEDIR=\"\"\n" >> "$CONFIG"
-    echo -e "# Username for access to server" >> "$CONFIG"
-    echo -e "USERNAME=\"\"\n" >> "$CONFIG"
-    echo -e "# Private key location (script only works with ssh keys)" >> "$CONFIG"
-    echo -e "KEYPATH=\"\"\n" >> "$CONFIG"
-    echo -e "# SSH port" >> "$CONFIG"
-    echo -e "PORT=\"\"\n" >> "$CONFIG"
-    echo -e "# Server IP or DNS name" >> "$CONFIG"
-    echo -e "SERVER=\"\"\n" >> "$CONFIG"
-    echo -e "# Base link location (Link minus the image that the user will visit). \n# Example https://mysite.net/pics/<your image name>.jpg" >> "$CONFIG"
-    echo -e "BASELINK=\"\"\n" >> "$CONFIG"
-    echo -e "# Allow/Deny desktop notifications" >> "$CONFIG"
-    echo -e "NOTIFICATIONS=\"\"" >> "$CONFIG"
-    echo -e "\nConfig file created!"
+	cat <<- EOF > "$CONFIG"
+	# Config file for sspush
+	 
+	# Filepath where screenshots are stored
+	SSFILEPATH=""
+	
+	# Remote directory where screenshots are stored
+	REMOTEDIR=""
+	
+	# Username for access to server
+	USERNAME=""
+	
+	# Private key location (script only works with ssh keys)
+	KEYPATH=""
+	
+	# SSH port
+	PORT=""
+	
+	# Server IP or DNS name
+	SERVER=""
+	
+	# Base link location (Link minus the image that the user will visit).
+	# Example https://mysite.net/pics/<your image name>.jpg"
+	BASELINK=""
+	
+	# Allow/Deny desktop notifications
+	NOTIFICATIONS=""
+	EOF
+    echo "Config file created!"
     exit 0
 }
 
@@ -87,7 +97,6 @@ conf_var_check () {
     : "${SERVER:?$msg}" 
     : "${BASELINK:?$msg}" 
     : "${NOTIFICATIONS:?$msg}" 
-    : "${INTERACTIVE:?$msg}" 
 } 
 
 # Creates the new randomly generated filename for the remote destination
