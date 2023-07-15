@@ -101,13 +101,10 @@ name_gen () {
 
 # macOS screencapture handler
 mac_screencapture () {
-   local option_pattern_full
-   local image_pattern
-   local vid_pattern
+   local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
+   local image_pattern="^-b$|^-C$|^-i$|^-m$"
+   local vid_pattern="^-v[g]?$"
    local file_name
-   option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[gG]?$"
-   image_pattern="^-b$|^-C$|^-i$|^-m$"
-   vid_pattern="^-v[gG]?$"
    if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
       file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
    elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
