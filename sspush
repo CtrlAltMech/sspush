@@ -29,8 +29,11 @@ main () {
         exit 0
 
     elif [[ -e "$1" ]]; then
-        echo "The selected file $1 will be pushed"
+        find_file "$1"
+        echo "Your selected file is $(basename $orig_file)"
+        push_logic
         exit 0
+
     fi
 
     while getopts ':i:a:s:' OPTION; 
