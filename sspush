@@ -21,11 +21,13 @@ main () {
     conf_check
     disp_server="$(display_serv_check)"
     os="$(os_check)"
-    copy_tool=$(clipboard_check)
 
-    if [[ "$1" == "" ]]; then
-        echo "This will just grab the most recent image in the screenshot folder"
+    if [[ -z "$1" ]]; then
+        find_file
+        echo "Your selected file is $(basename $orig_file)"
+        push_logic
         exit 0
+
     elif [[ -e "$1" ]]; then
         echo "The selected file $1 will be pushed"
         exit 0
@@ -191,7 +193,7 @@ display_serv_check () {
     elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
         echo "x11"
     elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
-        echo "macOS" # I know this is not a display server
+        echo "macos" # I know this is not a display server
     fi
 }
 
@@ -253,12 +255,14 @@ find_file() {
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
-    if [[ $(os_check) == "Darwin" ]]; then
-        echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
-    elif [[ $(os_check) == "Linux" ]]; then
-        echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
+    if [[ $(display_serv_check) == "macos" ]]; then
+        echo "$BASELINK$generated_name" | pbcopy # Copies to macOS clipboard
+    elif [[ $(display_serv_check) == "x11" ]]; then
+        echo "$BASELINK$generated_name" | xclip # Copies to xclip clipboard
+    elif [[ $(display_serv_check) == "wayland" ]]; then
+        echo "$BASELINK$generated_name" | wl-copy # Copies to wl-copy clipboard 
     else
-        echo "Unable to determine OS, nothing copied to clipboard."
+        echo "Unable to determine clipboard utility, nothing copied...."
         echo "Link to file $BASELINK$generated_name"
         exit 1
     fi
