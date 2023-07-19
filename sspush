@@ -12,23 +12,39 @@
 
 # Exit on error
 set -e
+# set -x
+# Configuration path
+readonly CONFIG="$HOME/.sspushrc"
 
 # Main logic
 main () {
+    conf_check
+    disp_server="$(display_serv_check)"
+    os="$(os_check)"
+    copy_tool=$(clipboard_check)
+
+    if [[ "$1" == "" ]]; then
+        echo "This will just grab the most recent image in the screenshot folder"
+        exit 0
+    elif [[ -e "$1" ]]; then
+        echo "The selected file $1 will be pushed"
+        exit 0
+    fi
+
     while getopts ':i:a:s:' OPTION; 
     do
         case "$OPTION" in
-            i)
+            i) # Interactive screencapture option
                 arg="$OPTARG"
                 echo "Option a was chosen OPTARG = $OPTARG which is equal to arg = $arg"
             ;;
             
-            a)
+            a) # Capture everything
                 arg="$OPTARG"
                 echo "Option b was chosen OPTARG = $OPTARG which is equal to arg = $arg"
             ;;
 
-            s)
+            s) # Capture specific monitor
                 arg="$OPTARG"
                 echo "Option c was chosen OPTARG = $OPTARG which is equal to arg = $arg"
             ;;
@@ -46,8 +62,30 @@ main () {
     fi
 }
 
-# Configuration path
-readonly CONFIG="$HOME/.sspushrc"
+
+# Configuration check
+conf_check () {
+    if ! [[ -f $CONFIG ]]; then
+        conf_prompt
+    else
+        . "$CONFIG" 
+        conf_var_check 
+    fi
+}
+
+# Clipboard check
+clipboard_check () {
+    if [[ "$disp_server" == "wayland" ]]; then
+       echo "wl-copy"
+    elif [[ "$disp_server" == "x11" ]]; then 
+       echo "xclip"
+    elif [[ "$disp_server" == "" ]]; then
+        echo "pbcopy"
+    else
+        echo "Unable to determine OS. Exiting..."
+        exit 1
+    fi
+}
 
 # If no configuration file is seen it will prompt to generate one 
 conf_prompt () {
@@ -152,6 +190,8 @@ display_serv_check () {
         echo "wayland"
     elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
         echo "x11"
+    elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
+        echo "macOS" # I know this is not a display server
     fi
 }
 
@@ -194,11 +234,6 @@ mac_screencapture () {
        exit 1
     fi
     screencapture "$1" "$file_name" 
-}
-
-# Linux screencapture handler
-linux_screencapture () {
-    :
 }
 
 # Finds the file to push to remote server
