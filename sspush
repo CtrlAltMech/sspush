@@ -14,7 +14,7 @@
 set -e
 # set -x
 # Configuration path
-readonly CONFIG="$HOME/.sspushrc"
+readonly CONFIG="$HOME/.config/sspushrc"
 
 # Main logic
 main () {
