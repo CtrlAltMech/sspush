@@ -84,7 +84,21 @@ screen_handler () {
         mac_screencapture "$arg" "$filepath"
     fi
 
+path_verify () {
+    # ensure the remotepath ends in a /
+    # since we're concatenating the path with the name of the generated file
+    # path + '/' + filename.png
+    local remote_path_len=${#REMOTEDIR}
+    local last_char=${REMOTEDIR:remote_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        REMOTEDIR=$REMOTEDIR'/'
+    fi
 
+    local local_path_len=${#SSFILEPATH}
+    local last_char=${SSFILEPATH:local_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        SSFILEPATH=$SSFILEPATH'/'
+    fi
 }
 
 # Configuration check
