@@ -14,11 +14,15 @@
 set -e
 # set -x
 # Configuration path
-readonly CONFIG="$HOME/.sspushrc"
+readonly CONFIG="$HOME/.config/sspushrc"
 
 # Main logic
 main () {
     conf_check
+    path_verify
+    # from here on we just work with $REMOTEDIR, since we know it's got a / at the end
+    display_serv_check
+    clipboard_check
 
     if [[ -z "$1" ]]; then
         find_file
@@ -75,16 +79,30 @@ screen_handler () {
         filepath=$SSFILEPATH$2
     fi
     # TODO probably make this a case statement
-    if [[ "$(display_serv_check)" == "wayland" ]]; then
-        echo "Your selected file is $(basename "$filepath")"
+    if [[ $disp_server == "wayland" ]]; then
         wayland_screencapture "$arg" "$filepath"
-    elif [[ "$(display_serv_check)" == "x11" ]]; then
+    elif [[ $disp_server == "x11" ]]; then
         x11_screencapture "$arg" "$filepath"
-    elif [[ "$(display_serv_check)" == "macos" ]]; then
+    elif [[ $disp_server == "macos" ]]; then
         mac_screencapture "$arg" "$filepath"
     fi
+}
 
+path_verify () {
+    # ensure the remotepath ends in a /
+    # since we're concatenating the path with the name of the generated file
+    # path + '/' + filename.png
+    local remote_path_len=${#REMOTEDIR}
+    local last_char=${REMOTEDIR:remote_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        REMOTEDIR=$REMOTEDIR'/'
+    fi
 
+    local local_path_len=${#SSFILEPATH}
+    local last_char=${SSFILEPATH:local_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        SSFILEPATH=$SSFILEPATH'/'
+    fi
 }
 
 # Configuration check
@@ -100,17 +118,21 @@ conf_check () {
 
 # Clipboard check
 clipboard_check () {
-    # TODO probably also a case statement if I don't find a better way.
-    if [[ "$disp_server" == "wayland" ]]; then
-       echo "wl-copy"
-    elif [[ "$disp_server" == "x11" ]]; then 
-       echo "xclip"
-    elif [[ "$disp_server" == "" ]]; then
-        echo "pbcopy"
-    else
-        echo "Unable to determine OS. Exiting..."
-        exit 1
-    fi
+  case $disp_server in
+    wayland)
+     CLIP_UTIL="wl-copy"
+     ;;
+    x11)
+      CLIP_UTIL="xclip"
+      ;;
+    macos)
+      CLIP_UTIL="pbcopy"
+      ;;
+    *)
+      echo "Unable to determine display server. Exiting..."
+      exit 1
+      ;;
+  esac
 }
 
 # If no configuration file is seen it will prompt to generate one 
@@ -161,10 +183,12 @@ conf_make () {
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
 
-    # Specify which clipboard to use (clipboard or primary)
-    CLIPBOARD="clipboard"
+  # Specify which clipboard to use (clipboard or primary)
+  CLIPBOARD="clipboard"
+
 	EOF
-    echo "Config file created!"
+    echo "Config file $CONFIG created!"
+    $EDITOR $CONFIG
     exit 0
 }
 
@@ -181,11 +205,14 @@ os_check () {
 # Checks which display server is running
 display_serv_check () {
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
-        echo "wayland"
+        disp_server="wayland"
+        CAPTURE=grim
     elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
-        echo "x11"
+        disp_server="x11"
+        CAPTURE=maim
     elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
-        echo "macos" # I know this is not a display server
+        disp_server="macos" # I know this is not a display server
+        capture=screencapture
     fi
 }
 
@@ -219,13 +246,13 @@ mac_screencapture () {
     # local vid_pattern="^-v[g]?$"
     case "$1" in
         -i)
-            screencapture -i "$2"
+            $CAPTURE -i "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            screencapture "$2"
+            $CAPTURE "$2"
             find_file "$2"
             push_logic
         ;;
@@ -234,15 +261,16 @@ mac_screencapture () {
 
 # Wayland screencapture
 wayland_screencapture () {
+  echo $CAPTURE
     case "$1" in
         -i)
-            grim -g "$(slurp)" "$2"
+            $CAPTURE -g "$(slurp)" "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            grim "$2"
+            $CAPTURE "$2"
             find_file
             push_logic
         ;;
@@ -250,9 +278,20 @@ wayland_screencapture () {
 }
 
 # X11 screencapture 
-# TODO placeholder for x11 screencapture
 x11_screencapture () {
-    :
+    case "$1" in
+        -i)
+            $CAPTURE -s "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            $CAPTURE "$2"
+            find_file
+            push_logic
+        ;;
+    esac
 } 
 
 # Finds the file to push to remote server
@@ -273,14 +312,14 @@ find_file() {
 # TODO There is a much better way to do this. BAD
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
-    if [[ $(display_serv_check) == "macos" ]]; then
-        echo "$BASELINK$generated_name" | pbcopy # Copies to macOS clipboard
-    elif [[ $(display_serv_check) == "x11" ]]; then
-        echo "$BASELINK$generated_name" | xclip # Copies to xclip clipboard
-    elif [[ $(display_serv_check) == "wayland" ]]  && [[ $CLIPBOARD == "clipboard" ]]; then
-        echo "$BASELINK$generated_name" | wl-copy # Copies to wl-copy clipboard 
-    elif [[ $(display_serv_check) == "wayland" ]]  && [[ $CLIPBOARD == "primary" ]]; then
-        echo "$BASELINK$generated_name" | wl-copy --primary # Copies to wl-copy primary clipboard 
+    if [[ $disp_server == "macos" ]]; then
+        echo "$BASELINK$generated_name" | $CLIP_UTIL # Copies to macOS clipboard
+    elif [[ $disp_server == "x11" ]]; then
+        echo "$BASELINK$generated_name" | $CLIP_UTIL # Copies to xclip clipboard
+    elif [[ $disp_server == "wayland" ]]  && [[ $CLIPBOARD == "clipboard" ]]; then
+        echo "$BASELINK$generated_name" | $CLIP_UTIL # Copies to wl-copy clipboard
+    elif [[ $disp_server == "wayland" ]]  && [[ $CLIPBOARD == "primary" ]]; then
+        echo "$BASELINK$generated_name" | $CLIP_UTIL --primary # Copies to wl-copy primary clipboard
     else
         echo "Unable to determine clipboard utility, nothing copied...."
         echo "Link to file $BASELINK$generated_name"
