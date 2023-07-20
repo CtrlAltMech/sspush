@@ -19,60 +19,80 @@ readonly CONFIG="$HOME/.sspushrc"
 # Main logic
 main () {
     conf_check
-    disp_server="$(display_serv_check)"
-    os="$(os_check)"
 
     if [[ -z "$1" ]]; then
         find_file
-        echo "Your selected file is $(basename $orig_file)"
+        echo "Your selected file is $(basename "$orig_file")"
         push_logic
         exit 0
 
     elif [[ -e "$1" ]]; then
         find_file "$1"
-        echo "Your selected file is $(basename $orig_file)"
+        echo "Your selected file is $(basename "$orig_file")"
         push_logic
         exit 0
-
     fi
 
-    while getopts ':i:a:s:' OPTION; 
+    while getopts ':ia' OPTION; # Look into just using a case statement 
     do
         case "$OPTION" in
             i) # Interactive screencapture option
-                arg="$OPTARG"
-                echo "Option a was chosen OPTARG = $OPTARG which is equal to arg = $arg"
+                if [[ "$#" -ge 3 ]]; then
+                    echo "Only accepts one option and a filepath."
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
             ;;
             
             a) # Capture everything
-                arg="$OPTARG"
-                echo "Option b was chosen OPTARG = $OPTARG which is equal to arg = $arg"
+                if [[ "$#" -ge 3 ]]; then
+                    echo "Only accepts one option and a filepath."
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
             ;;
-
-            s) # Capture specific monitor
-                arg="$OPTARG"
-                echo "Option c was chosen OPTARG = $OPTARG which is equal to arg = $arg"
-            ;;
+            # TODO add the rest of the options
             \?)
-                echo "Usage: $(basename $0) [-i] [-a] [-s] /optional/file/path/"
+                # TODO cleanup, compare with better scripts. --help option?
+                echo "Usage: $(basename "$0") [-i] [-a]  /optional/file/path/"
                 exit 1
             ;;
         esac
     done
-
-    if [[ "$arg" == "" ]]; then
-        echo "No input file"
-    else
-        echo "Input is $arg"
-    fi
 }
 
+# Screencapture handler
+screen_handler () {
+    local arg="$1"
+    local filepath="$2"
+    
+    # TODO, look into better way to use less if statements or improve current.
+    if [[ -z "$filepath" ]]; then 
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png"; 
+    else
+        filepath=$SSFILEPATH$2
+    fi
+    # TODO probably make this a case statement
+    if [[ "$(display_serv_check)" == "wayland" ]]; then
+        echo "Your selected file is $(basename "$filepath")"
+        wayland_screencapture "$arg" "$filepath"
+    elif [[ "$(display_serv_check)" == "x11" ]]; then
+        x11_screencapture "$arg" "$filepath"
+    elif [[ "$(display_serv_check)" == "macos" ]]; then
+        mac_screencapture "$arg" "$filepath"
+    fi
+
+
+}
 
 # Configuration check
 conf_check () {
     if ! [[ -f $CONFIG ]]; then
         conf_prompt
     else
+        # TODO use directive to specify location per ShellCheck 
         . "$CONFIG" 
         conf_var_check 
     fi
@@ -80,6 +100,7 @@ conf_check () {
 
 # Clipboard check
 clipboard_check () {
+    # TODO probably also a case statement if I don't find a better way.
     if [[ "$disp_server" == "wayland" ]]; then
        echo "wl-copy"
     elif [[ "$disp_server" == "x11" ]]; then 
@@ -94,6 +115,7 @@ clipboard_check () {
 
 # If no configuration file is seen it will prompt to generate one 
 conf_prompt () {
+    # TODO make read prompt variable conf_choice variable local
     read -p "No configuration file found. Would you like to create one? (y/n): " conf_choice
     
     while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
@@ -121,13 +143,13 @@ conf_make () {
 	REMOTEDIR=""
 	
 	# Username for access to server
-	USERNAME=""
+	USERNAME="$USER"
 	
 	# Private key location (script only works with ssh keys)
 	KEYPATH=""
 	
 	# SSH port
-	PORT=""
+	PORT="22"
 	
 	# Server IP or DNS name
 	SERVER=""
@@ -138,49 +160,16 @@ conf_make () {
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
+
+    # Specify which clipboard to use (clipboard or primary)
+    CLIPBOARD="clipboard"
 	EOF
     echo "Config file created!"
     exit 0
 }
 
-# Checks info provided is correct and sets variables
-pre_check () {
-    # Mac options, will need to get appropriate options to suit both linux/mac
-    local option_pattern_full='^$|^-b$|^-C$|^-i$|^-m$|^-v[g]?$'
-    local image_pattern='^-b$|^-C$|^-i$|^-m$'
-    local vid_pattern='^-v[g]?$'
-    disp_server="$(display_serv_check)"
-    os="$(os_check)"
-    
-    if [[ "$disp_server" == "wayland" ]]; then
-        copy_tool="$(wl-copy)"
-    elif [[ "$disp_server" == "x11" ]]; then 
-        copy_tool="$(xclip)"
-    elif [[ "$os" == "Darwin" ]]; then
-        copy_tool="$(pbcopy)"
-    else
-        echo "Unable to determine OS. Exiting..."
-        exit 1
-    fi
-
-    
-    if ! [[ -f $CONFIG ]]; then
-        conf_prompt
-    else
-        . "$CONFIG" 
-        conf_var_check 
-    fi
-
-    if ! [[ "$1" =~ $option_pattern_full ]]; then
-        echo "Your option doesn't match"
-        exit 1
-    else
-        arg="$1"
-        echo "Your option does match" 
-    fi
-}
-
 # Checks what OS this is running on
+# TODO probably don't need as I will use display server to dictacte actions
 os_check () {
     if [[ "$(uname -s)" == "Darwin" ]]; then
         echo "Darwin"
@@ -224,22 +213,47 @@ name_gen () {
 
 # macOS screencapture handler
 mac_screencapture () {
-    local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
-    local image_pattern="^-b$|^-C$|^-i$|^-m$"
-    local vid_pattern="^-v[g]?$"
-    local file_name
-    if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
-       file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
-    elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
-       file_name=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
-    elif [[ $1 =~ $option_pattern_full ]] && [[ -n $2 ]]; then
-       file_name="$SSFILEPATH$2"
-    else
-       echo "Invalid argument."
-       exit 1
-    fi
-    screencapture "$1" "$file_name" 
+    # TODO keeping these for now, might use eventually for other mac options
+    # local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
+    # local image_pattern="^-b$|^-C$|^-i$|^-m$"
+    # local vid_pattern="^-v[g]?$"
+    case "$1" in
+        -i)
+            screencapture -i "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            screencapture "$2"
+            find_file "$2"
+            push_logic
+        ;;
+    esac
 }
+
+# Wayland screencapture
+wayland_screencapture () {
+    case "$1" in
+        -i)
+            grim -g "$(slurp)" "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            grim "$2"
+            find_file
+            push_logic
+        ;;
+    esac
+}
+
+# X11 screencapture 
+# TODO placeholder for x11 screencapture
+x11_screencapture () {
+    :
+} 
 
 # Finds the file to push to remote server
 find_file() {
@@ -256,40 +270,23 @@ find_file() {
 }
 
 # Takes all the curated information, pushes it to the server, provides a link
+# TODO There is a much better way to do this. BAD
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
     if [[ $(display_serv_check) == "macos" ]]; then
         echo "$BASELINK$generated_name" | pbcopy # Copies to macOS clipboard
     elif [[ $(display_serv_check) == "x11" ]]; then
         echo "$BASELINK$generated_name" | xclip # Copies to xclip clipboard
-    elif [[ $(display_serv_check) == "wayland" ]]; then
+    elif [[ $(display_serv_check) == "wayland" ]]  && [[ $CLIPBOARD == "clipboard" ]]; then
         echo "$BASELINK$generated_name" | wl-copy # Copies to wl-copy clipboard 
+    elif [[ $(display_serv_check) == "wayland" ]]  && [[ $CLIPBOARD == "primary" ]]; then
+        echo "$BASELINK$generated_name" | wl-copy --primary # Copies to wl-copy primary clipboard 
     else
         echo "Unable to determine clipboard utility, nothing copied...."
         echo "Link to file $BASELINK$generated_name"
         exit 1
     fi
-    echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
+    echo "Link $BASELINK$generated_name has been copied to clipboard!"
 }
 
-# Start of logic
-# main "$1"
 main "$@"
-# pre_check "$1"
-# find_file
-# echo "Your most recent file is...$orig_file"
-#push_logic
-# elif [[ "$#" == "1" && -e "$1" ]]; then # No option, only file selected to push
-#     find_file "$1"
-#     echo "Your selected file is $orig_file"
-#     push_logic
-# elif [[ $(os_check) == "Darwin" ]]; then
-#     mac_screencapture "$1" "$2"
-#     find_file
-#     echo "Your selected file is $orig_file" 
-#     push_logic
-# elif [[ $(os_check) == "Linux" ]]; then
-#     : # This is just a placeholder for linux support
-# else
-#     echo "Not a valid option."
-# fi
