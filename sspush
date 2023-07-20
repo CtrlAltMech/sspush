@@ -175,10 +175,12 @@ conf_make () {
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
 
-    # Specify which clipboard to use (clipboard or primary)
-    CLIPBOARD="clipboard"
+  # Specify which clipboard to use (clipboard or primary)
+  CLIPBOARD="clipboard"
+
 	EOF
-    echo "Config file created!"
+    echo "Config file $CONFIG created!"
+    $EDITOR $CONFIG
     exit 0
 }
 
