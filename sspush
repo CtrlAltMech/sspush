@@ -92,17 +92,17 @@ screen_handler () {
 
     case "$disp_server" in
         wayland)
-            echo "Screencapture in progress, file created: $(basename "$filepath")"
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
             wayland_screencapture "$arg" "$filepath"
             ;;
 
         x11)
-            echo "Screencapture in progress, file created: $(basename "$filepath")"
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
             x11_screencapture "$arg" "$filepath"
             ;;
 
         macos)
-            echo "Screencapture in progress, file created: $(basename "$filepath")"
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
             mac_screencapture "$arg" "$filepath"
             ;;
     esac
@@ -146,7 +146,7 @@ clipboard_check () {
             [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
             ;;
         x11)
-            clip_util="xclip -i"
+            clip_util="xclip -sel $CLIPBOARD"
             ;;
         macos)
             clip_util="pbcopy"
@@ -322,13 +322,13 @@ push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
     case "$disp_server" in
         macos)
-            echo "$BASELINK$generated_name" | pbcopy
+            echo "$BASELINK$generated_name" | $clip_util
             ;;
         x11)
-            echo "$BASELINK$generated_name" | xclip
+            echo "$BASELINK$generated_name" | $clip_util
             ;;
         wayland)
-            echo "$BASELINK$generated_name" | wl-copy
+            echo "$BASELINK$generated_name" | $clip_util
             ;;
         *)
             echo "Unable to determine clipboard utility, nothing copied...."
