@@ -146,7 +146,7 @@ clipboard_check () {
             [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
             ;;
         x11)
-            clip_util="xclip"
+            clip_util="xclip -i"
             ;;
         macos)
             clip_util="pbcopy"
@@ -206,9 +206,9 @@ conf_make () {
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
-
-    # Specify which clipboard to use (clipboard or primary)
-    CLIPBOARD="clipboard"
+	
+	# Specify which clipboard to use (clipboard or primary)
+	CLIPBOARD="clipboard"
 
 	EOF
     echo "Config file $CONFIG created!"
@@ -319,19 +319,16 @@ find_file() {
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
-    local pull_link
-    pull_link=$(echo "$BASELINK$generated_name" | $clip_util)
-
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
     case "$disp_server" in
         macos)
-            $pull_link
+            echo "$BASELINK$generated_name" | pbcopy
             ;;
         x11)
-            $pull_link
+            echo "$BASELINK$generated_name" | xclip
             ;;
         wayland)
-            $pull_link
+            echo "$BASELINK$generated_name" | wl-copy
             ;;
         *)
             echo "Unable to determine clipboard utility, nothing copied...."
