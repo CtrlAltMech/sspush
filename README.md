@@ -89,6 +89,7 @@ If you would like to contribute to the sspush project, follow the instructions b
 The sspush bash script is released under the GNU General Public License v3.0. See the LICENSE file for more information.
 
 ## Stuff in the works
+- Dependency check
 - Add video capture options
 - Add desktop notifications option and an option to trigger your screenshot utility through the script.
 - General code refactoring.
