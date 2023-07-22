@@ -1,17 +1,19 @@
 # sspush - A screencapture and file sharing utility
 sspush is intended to make it simple to upload and share screenshots/images/files via a public link that points to a server you own.
 
-![Example](https://github.com/CtrlAltMech/sspush/assets/7492741/1bafa0f3-9941-4f16-b2ad-031c2ceeab53)
+![Example](https://github.com/CtrlAltMech/sspush/assets/7492741/374c9dd4-efb4-4509-bcfa-66cfc7257354)
 
 ## Requirements
 
-- A remote server you have access to.
-- ssh keys on local and remote machine (This will not work with a password login).
-- [xclip](https://github.com/astrand/xclip) locally (For Linux users).
-- [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users on Wayland).
-- [maim](https://github.com/naelstrof/maim) locally (For Linux users).
-- [slop](https://github.com/naelstrof/slop) locally (For Linux users).
-- [ffmpeg](https://ffmpeg.org/) locally (For Linux users).
+- A web-server you have access to.
+- [SSH key pair](https://wiki.archlinux.org/title/SSH_keys) for web-server login.
+- [xclip](https://github.com/astrand/xclip) locally (For Linux users using x11).
+- [maim](https://github.com/naelstrof/maim) locally (For Linux users using x11).
+- [slop](https://github.com/naelstrof/slop) locally (For Linux users using x11).
+- [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users using Wayland).
+- [grim](https://sr.ht/~emersion/grim/) locally (For Linux users using Wayland)
+- [slurp](https://github.com/emersion/slurp) (For Linux users using Wayland)
+- [screencapture](https://support.apple.com/en-us/HT201361) (Default on macOS)
 
 ## Installation
 
@@ -29,50 +31,50 @@ To use the sspush, follow the instructions below:
 
 1. On first use (when no config file is present) you will be prompted to generate an empty configuration file.
 
-```bash
+```
 # Config file for sspush
-
+ 
 # Filepath where screenshots are stored
 SSFILEPATH=""
 
-# Remote directory where screenshots will be sent
+# Remote directory where screenshots are stored
 REMOTEDIR=""
 
 # Username for access to server
-USERNAME=""
+USERNAME="$USER"
 
 # Private key location (script only works with ssh keys)
 KEYPATH=""
 
 # SSH port
-PORT=""
+PORT="22"
 
 # Server IP or DNS name
 SERVER=""
 
-# Base link location (this is the link base that the user will visit. 
-# Example https://mysite.net/pics/<your image name>.jpg
+# Base link location (Link minus the image that the user will visit).
+# Example https://mysite.net/pics/<your image name>.jpg"
 BASELINK=""
 
-# Allow/Deny desktop notifications (Not in use yet)
+# Allow/Deny desktop notifications
 NOTIFICATIONS=""
+
+# Specify which clipboard to use (clipboard or primary)
+CLIPBOARD="clipboard"
 ```
 
-2. Once the configuration file is generated you will need to enter all approprite information.
-3. When the config is filled out run the script again and your file should upload.
+2. Once the configuration file is created your editor should open to edit the file.
+3. When the configuration file is filled out run the command again to push your file.
 4. A link will be copied to your clipboard as well as printed out to the terminal.
 
-## Flags
-- `sspush` - Will post most recent file/screencapture in screenshots folder (If one exists).
-- `sspush -b <optional filename>` - Will post macbook touchbar.
-- `sspush -C <optional filename>` - Will post entire screen plus cursor.
+## Flags :triangular_flag_on_post:
+- `sspush` - Will post most recent file/screencapture in screenshots folder specified in config file. 
 - `sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and post.
-- `sspush -m <optional filename>` - Will post only main monitor.
-- `sspush -v <optional filename>` - Will start video capture on main monitor and post when done.
-- `sspush -vg <optional filename>` - Will start video capture with mic capture and post when done.
+- `sspush -a <optional filename>` - Captures everything on all screens and posts.
+- `sspush -h <optional filename>` - Prints syntax help out to terminal.
 
-## Contributing
-I would love to hear if there are any bugs or a requested feature!
+## Contributing :handshake:
+I would love to hear if there are any bugs or a requested feature! :heart:
 
 If you would like to contribute to the sspush project, follow the instructions below:
 
@@ -87,10 +89,10 @@ If you would like to contribute to the sspush project, follow the instructions b
 The sspush bash script is released under the GNU General Public License v3.0. See the LICENSE file for more information.
 
 ## Stuff in the works
-
-- Finish Linux functionality.
+- Dependency check
+- Add video capture options
 - Add desktop notifications option and an option to trigger your screenshot utility through the script.
 - General code refactoring.
 - Add color.
-- Add help option.
+- Configuration sanitization.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)

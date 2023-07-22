@@ -3,7 +3,7 @@
 # sspush
 # Date: 5/9/2023
 #
-# A tool for macOS and Linux that pushes a screenshot/image 
+# A tool for macOS and Linux that pushes a screencapture/image/file 
 # to a remote web server of your choosing via scp.
 # 
 # by CtrlAltMech
@@ -14,16 +14,160 @@
 set -e
 
 # Configuration path
-readonly CONFIG="$HOME/.sspushrc"
+readonly CONFIG="$HOME/.config/sspushrc"
+
+# Main logic
+main () {
+    conf_check
+    path_verify
+    # from here on we just work with $REMOTEDIR, since we know it's got a / at the end
+    display_serv_check
+    clipboard_check
+
+    if [[ -z "$1" ]]; then # No argument, pushes most recent screencap in folder
+        find_file
+        echo "Your most recent file is $(basename "$orig_file")"
+        push_logic
+        exit 0
+
+    elif [[ -e "$1" ]]; then # Pushes file specified in argument
+        find_file "$1"
+        echo "Your selected file is $(basename "$orig_file")"
+        push_logic
+        exit 0
+    fi
+
+    while getopts ':iah' OPTION;  
+    do
+        case "$OPTION" in
+            i) # Interactive screencapture option
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
+            ;;
+            
+            a) # Capture everything
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
+            ;;
+
+            h) # Print syntax help
+                help_msg
+                exit 1
+            ;;
+
+            \?)
+                help_msg
+                exit 1
+            ;;
+        esac
+    done
+}
+
+# Help message
+help_msg () {
+    echo "Syntax: $(basename "$0") [-i|-a]  /optional/file/path/"
+    echo "options:"
+    echo "-i    Interactive mode, select portion of screen to capture and push to server."
+    echo "-a    Capture everything on screen and push to server."
+}
+
+# Handles which screencapture utility to use based on display server.
+screen_handler () {
+    local arg="$1"
+    local filepath="$2"
+
+    if [[ -z "$filepath" ]]; then 
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png"; 
+    else
+        filepath=$SSFILEPATH$2
+    fi
+
+    case "$disp_server" in
+        wayland)
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            wayland_screencapture "$arg" "$filepath"
+            ;;
+
+        x11)
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            x11_screencapture "$arg" "$filepath"
+            ;;
+
+        macos)
+            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            mac_screencapture "$arg" "$filepath"
+            ;;
+    esac
+}
+
+path_verify () {
+    # ensure the remotepath ends in a /
+    # since we're concatenating the path with the name of the generated file
+    # path + '/' + filename.png
+    local remote_path_len=${#REMOTEDIR}
+    local last_char=${REMOTEDIR:remote_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        REMOTEDIR=$REMOTEDIR'/'
+    fi
+
+    local local_path_len=${#SSFILEPATH}
+    local last_char=${SSFILEPATH:local_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        SSFILEPATH=$SSFILEPATH'/'
+    fi
+}
+
+# Checks for config file, prompt to create if none exists.
+# If config file exists, make sure its filled out.
+conf_check () {
+    if ! [[ -f $CONFIG ]]; then
+        conf_prompt
+    else
+        # shellcheck source-path=SCRIPTDIR/../../.config/
+        # shellcheck source=sspushrc
+        . "$CONFIG" 
+        conf_var_check 
+    fi
+}
+
+# Clipboard check
+clipboard_check () {
+    case $disp_server in
+        wayland)
+            clip_util="wl-copy"
+            [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
+            ;;
+        x11)
+            clip_util="xclip -sel $CLIPBOARD"
+            ;;
+        macos)
+            clip_util="pbcopy"
+            ;;
+        *)
+            echo "Unable to determine display server. Exiting..."
+            exit 1
+            ;;
+    esac
+}
 
 # If no configuration file is seen it will prompt to generate one 
 conf_prompt () {
+    local conf_choice
     read -p "No configuration file found. Would you like to create one? (y/n): " conf_choice
     
     while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
     do
         read -pr "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
     done
+
     if [[ $conf_choice =~ (^y$|^Y$) ]]; then
         conf_make
     elif [[ "$conf_choice" =~ (^n$|^N$) ]]; then
@@ -45,13 +189,13 @@ conf_make () {
 	REMOTEDIR=""
 	
 	# Username for access to server
-	USERNAME=""
+	USERNAME="$USER"
 	
 	# Private key location (script only works with ssh keys)
 	KEYPATH=""
 	
 	# SSH port
-	PORT=""
+	PORT="22"
 	
 	# Server IP or DNS name
 	SERVER=""
@@ -62,27 +206,27 @@ conf_make () {
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
+	
+	# Specify which clipboard to use (clipboard or primary)
+	CLIPBOARD="clipboard"
+
 	EOF
-    echo "Config file created!"
+    echo "Config file $CONFIG created!"
+    $EDITOR $CONFIG # Open config in editor
     exit 0
 }
 
-# Initial check the config exists and all options set.
-pre_check () {
-    if ! [[ -f $CONFIG ]]; then
-        conf_prompt
-    else
-        . "$CONFIG" # Source the configuration file
-        conf_var_check 
-    fi
-}
-
-# Checks what OS this is running on
-os_check () {
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        echo "Darwin"
-    elif [[ "$(uname -s)" == "Linux" ]]; then
-        echo "Linux"
+# Checks which display server is running
+display_serv_check () {
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+        disp_server="wayland"
+        CAPTURE=grim
+    elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
+        disp_server="x11"
+        CAPTURE=maim
+    elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
+        disp_server="macos" # macOS does not use XDG by default
+        CAPTURE=screencapture
     fi
 }
 
@@ -97,6 +241,7 @@ conf_var_check () {
     : "${SERVER:?$msg}" 
     : "${BASELINK:?$msg}" 
     : "${NOTIFICATIONS:?$msg}" 
+    : "${CLIPBOARD:?$msg}" 
 } 
 
 # Creates the new randomly generated filename for the remote destination
@@ -109,22 +254,54 @@ name_gen () {
 
 # macOS screencapture handler
 mac_screencapture () {
-    local option_pattern_full="^-b$|^-C$|^-i$|^-m$|^-v[g]?$"
-    local image_pattern="^-b$|^-C$|^-i$|^-m$"
-    local vid_pattern="^-v[g]?$"
-    local file_name
-    if [[ $1 =~ $vid_pattern ]] && [[ -z $2 ]]; then
-       file_name=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4"
-    elif [[ $1 =~ $image_pattern ]] && [[ -z $2 ]]; then
-       file_name=$SSFILEPATH"Screenshot_$(date +"%Y%m%d_%H%M%S").png"
-    elif [[ $1 =~ $option_pattern_full ]] && [[ -n $2 ]]; then
-       file_name="$SSFILEPATH$2"
-    else
-       echo "Invalid argument."
-       exit 1
-    fi
-    screencapture "$1" "$file_name" 
+    case "$1" in
+        -i)
+            $CAPTURE -i "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            $CAPTURE "$2"
+            find_file "$2"
+            push_logic
+        ;;
+    esac
 }
+
+# Wayland screencapture
+wayland_screencapture () {
+    case "$1" in
+        -i)
+            $CAPTURE -g "$(slurp)" "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            $CAPTURE "$2"
+            find_file
+            push_logic
+        ;;
+    esac
+}
+
+# X11 screencapture 
+x11_screencapture () {
+    case "$1" in
+        -i)
+            $CAPTURE -s "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            $CAPTURE "$2"
+            find_file
+            push_logic
+        ;;
+    esac
+} 
 
 # Finds the file to push to remote server
 find_file() {
@@ -135,7 +312,7 @@ find_file() {
         orig_file="$1"
         name_gen "$1"
     else
-        echo "FILE NOT FOUND!"
+        echo "File not found. Try again..."
         exit 1
     fi
 }
@@ -143,36 +320,24 @@ find_file() {
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
-    if [[ $(os_check) == "Darwin" ]]; then
-        echo "$BASELINK$generated_name" | pbcopy # Copies to macOS keyboard
-    elif [[ $(os_check) == "Linux" ]]; then
-        echo "$BASELINK$generated_name" | xclip # Copies to xclip keyboard
-    else
-        echo "Unable to determine OS, nothing copied to clipboard."
-        echo "Link to file $BASELINK$generated_name"
-        exit 1
-    fi
-    echo "Link to file $BASELINK$generated_name has been copied to clipboard!"
+    case "$disp_server" in
+        macos)
+            echo "$BASELINK$generated_name" | $clip_util
+            ;;
+        x11)
+            echo "$BASELINK$generated_name" | $clip_util
+            ;;
+        wayland)
+            echo "$BASELINK$generated_name" | $clip_util
+            ;;
+        *)
+            echo "Unable to determine clipboard utility, nothing copied...."
+            echo "Link to file $BASELINK$generated_name"
+            exit 1
+            ;;
+    esac
+
+    echo "Link $BASELINK$generated_name has been copied to clipboard!"
 }
 
-# Start of logic
-pre_check
-
-if [[ -z "$1" ]]; then # no options specified finds the most recent file in your screenshot folder
-    find_file
-    echo "Your most recent file is...$orig_file"
-    push_logic
-elif [[ "$#" == "1" && -e "$1" ]]; then # No option, only file selected to push
-    find_file "$1"
-    echo "Your selected file is $orig_file"
-    push_logic
-elif [[ $(os_check) == "Darwin" ]]; then
-    mac_screencapture "$1" "$2"
-    find_file
-    echo "Your selected file is $orig_file" 
-    push_logic
-elif [[ $(os_check) == "Linux" ]]; then
-    : # This is just a placeholder for linux support
-else
-    echo "Not a valid option."
-fi
+main "$@"
