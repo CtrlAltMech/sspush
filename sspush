@@ -16,6 +16,12 @@ set -e
 # Configuration path
 readonly CONFIG="$HOME/.config/sspushrc"
 
+# Output Colors
+readonly RED="\e[31m"
+readonly GREEN="\e[32m"
+readonly YELLOW='\e[33m'
+readonly ENDCOLOR="\e[0m"
+
 # Main logic
 main () {
     conf_check
@@ -26,17 +32,18 @@ main () {
 
     if [[ -z "$1" ]]; then # No argument, pushes most recent screencap in folder
         find_file
-        echo "Your most recent file is $(basename "$orig_file")"
+        echo -e "${YELLOW}Your most recent file is $(basename "$orig_file").${ENDCOLOR}"
         push_logic
         exit 0
 
     elif [[ -e "$1" ]]; then # Pushes file specified in argument
         find_file "$1"
-        echo "Your selected file is $(basename "$orig_file")"
+        echo -e "${YELLOW}Your selected file is $(basename "$orig_file")${ENDCOLOR}"
         push_logic
         exit 0
     fi
 
+    # Option branch logic
     while getopts ':iah' OPTION;  
     do
         case "$OPTION" in
@@ -63,7 +70,7 @@ main () {
                 exit 1
             ;;
 
-            \?)
+            \?) # Catch everything else
                 help_msg
                 exit 1
             ;;
@@ -92,17 +99,17 @@ screen_handler () {
 
     case "$disp_server" in
         wayland)
-            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
             wayland_screencapture "$arg" "$filepath"
             ;;
 
         x11)
-            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
             x11_screencapture "$arg" "$filepath"
             ;;
 
         macos)
-            echo "Screencapture in progress, file to be created: $(basename "$filepath")"
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
             mac_screencapture "$arg" "$filepath"
             ;;
     esac
@@ -152,7 +159,7 @@ clipboard_check () {
             clip_util="pbcopy"
             ;;
         *)
-            echo "Unable to determine display server. Exiting..."
+            echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
             exit 1
             ;;
     esac
@@ -161,17 +168,17 @@ clipboard_check () {
 # If no configuration file is seen it will prompt to generate one 
 conf_prompt () {
     local conf_choice
-    read -p "No configuration file found. Would you like to create one? (y/n): " conf_choice
+    read -p "$(echo -e "${YELLOW}No configuration file found. Would you like to create one? (y/n): ${ENDCOLOR}")" conf_choice
     
     while ! [[ $conf_choice =~ (^y$|^Y$|^n$|^N$) ]]
     do
-        read -pr "Not a valid option. Would you like to create a config file? (y/n): " conf_choice
+        read -p "$(echo -e "${RED}Not a valid option. Would you like to create a config file? (y/n): ${ENDCOLOR}")" conf_choice
     done
 
     if [[ $conf_choice =~ (^y$|^Y$) ]]; then
         conf_make
     elif [[ "$conf_choice" =~ (^n$|^N$) ]]; then
-        echo "Goodbye!"
+        echo -e "${YELLOW}Goodbye!${ENDCOLOR}"
         exit 0
     fi
 }
@@ -211,7 +218,7 @@ conf_make () {
 	CLIPBOARD="clipboard"
 
 	EOF
-    echo "Config file $CONFIG created!"
+    echo -e "${GREEN}Config file $CONFIG created!${ENDCOLOR}"
     $EDITOR $CONFIG # Open config in editor
     exit 0
 }
@@ -232,7 +239,7 @@ display_serv_check () {
 
 # Verify that all configuration variables have been set, error if not
 conf_var_check () {
-    local msg="All configuration variables need to be set at runtime."
+    local msg="$(echo -e "${RED}All configuration variables need to be set at runtime.${ENDCOLOR}")"
     : "${SSFILEPATH:?$msg}" 
     : "${REMOTEDIR:?$msg}" 
     : "${USERNAME:?$msg}" 
@@ -312,7 +319,7 @@ find_file() {
         orig_file="$1"
         name_gen "$1"
     else
-        echo "File not found. Try again..."
+        echo -e "${RED}File not found. Try again...${ENDCOLOR}"
         exit 1
     fi
 }
@@ -331,13 +338,13 @@ push_logic () {
             echo "$BASELINK$generated_name" | $clip_util
             ;;
         *)
-            echo "Unable to determine clipboard utility, nothing copied...."
-            echo "Link to file $BASELINK$generated_name"
+            echo -e "${RED}Unable to determine clipboard utility, nothing copied....${ENDCOLOR}"
+            echo -e "${GREEN}Link to file $BASELINK$generated_name${ENDCOLOR}"
             exit 1
             ;;
     esac
 
-    echo "Link $BASELINK$generated_name has been copied to clipboard!"
+    echo -e "${GREEN}Link $BASELINK$generated_name has been copied to clipboard!${ENDCOLOR}"
 }
 
 main "$@"
