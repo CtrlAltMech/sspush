@@ -93,6 +93,5 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 - Add video capture options
 - Add desktop notifications option and an option to trigger your screenshot utility through the script.
 - General code refactoring.
-- Add color.
 - Configuration sanitization.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
