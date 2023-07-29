@@ -326,7 +326,7 @@ find_file() {
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
-    scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server
+    scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server 
     case "$disp_server" in
         macos)
             echo "$BASELINK$generated_name" | $clip_util
