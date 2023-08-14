@@ -310,6 +310,16 @@ x11_screencapture () {
     esac
 } 
 
+# Notifcations on desktop
+notifications() {
+    shopt -s nocasematch
+    if [[ "$NOTIFICATIONS" == "allow" ]] && [[ "$disp_server" == "macos" ]]; then
+        osascript -e 'display notification "'$(basename "$orig_file")'" with title "Uploaded!"'
+    else
+        :
+    fi
+}
+
 # Finds the file to push to remote server
 find_file() {
     if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
@@ -330,6 +340,7 @@ push_logic () {
     case "$disp_server" in
         macos)
             echo "$BASELINK$generated_name" | $clip_util
+            notifications
             ;;
         x11)
             echo "$BASELINK$generated_name" | $clip_util
