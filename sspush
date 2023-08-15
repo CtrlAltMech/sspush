@@ -313,8 +313,22 @@ x11_screencapture () {
 # Notifcations on desktop
 notifications() {
     shopt -s nocasematch
-    if [[ "$NOTIFICATIONS" == "allow" ]] && [[ "$disp_server" == "macos" ]]; then
-        osascript -e 'display notification "'$(basename "$orig_file")'" with title "Uploaded!"'
+    if [[ "$NOTIFICATIONS" == "allow" ]]; then
+        case "$disp_server" in
+            "macos")
+                osascript -e 'display notification "'$(basename "$orig_file")'" with title "Uploaded!"'
+                ;;
+
+            "x11")
+                notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                ;;
+
+            "wayland")
+                notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                ;;
+
+        esac
+
     else
         :
     fi
@@ -337,10 +351,10 @@ find_file() {
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server 
+    notifications # Shows a notification if allowed in config file
     case "$disp_server" in
         macos)
             echo "$BASELINK$generated_name" | $clip_util
-            notifications
             ;;
         x11)
             echo "$BASELINK$generated_name" | $clip_util
