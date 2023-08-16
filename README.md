@@ -1,19 +1,21 @@
 # sspush - A screencapture and file sharing utility
-sspush is intended to make it simple to upload and share screenshots/images/files via a public link that points to a server you own.
 
-![Example](https://github.com/CtrlAltMech/sspush/assets/7492741/374c9dd4-efb4-4509-bcfa-66cfc7257354)
+sspush is intended to make it simple to upload and share screenshots/images/files with no intervention from the user via a public link that points to a server you own.
+
+![Example2](https://github.com/CtrlAltMech/sspush/assets/7492741/417a23ec-5c21-456e-9036-c2b68aebeef8)
 
 ## Requirements
 
-- A web-server you have access to.
+- [web server](https://en.wikipedia.org/wiki/Web_server) remote server that you have access to.
 - [SSH key pair](https://wiki.archlinux.org/title/SSH_keys) for web-server login.
 - [xclip](https://github.com/astrand/xclip) locally (For Linux users using x11).
 - [maim](https://github.com/naelstrof/maim) locally (For Linux users using x11).
 - [slop](https://github.com/naelstrof/slop) locally (For Linux users using x11).
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users using Wayland).
-- [grim](https://sr.ht/~emersion/grim/) locally (For Linux users using Wayland)
-- [slurp](https://github.com/emersion/slurp) (For Linux users using Wayland)
-- [screencapture](https://support.apple.com/en-us/HT201361) (Default on macOS)
+- [grim](https://sr.ht/~emersion/grim/) locally (For Linux users using Wayland).
+- [slurp](https://github.com/emersion/slurp) locally (For Linux users using Wayland).
+- [screencapture](https://support.apple.com/en-us/HT201361) locally (Default on macOS).
+- [libnotify](https://github.com/GNOME/libnotify) locally (For Linux users, only required if you need notifications).
 
 ## Installation
 
@@ -91,7 +93,6 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 ## Stuff in the works
 - Dependency check
 - Add video capture options
-- Add desktop notifications option and an option to trigger your screenshot utility through the script.
 - General code refactoring.
 - Configuration sanitization.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
