@@ -326,7 +326,9 @@ notifications() {
             "wayland")
                 notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
                 ;;
-
+            *)
+                :
+                ;;
         esac
 
     else
@@ -370,6 +372,7 @@ push_logic () {
     esac
 
     echo -e "${GREEN}Link $BASELINK$generated_name has been copied to clipboard!${ENDCOLOR}"
+
 }
 
 main "$@"
