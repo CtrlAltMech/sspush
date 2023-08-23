@@ -44,7 +44,7 @@ main () {
     fi
 
     # Option branch logic
-    while getopts ':iah' OPTION;  
+    while getopts ':iahv' OPTION;  
     do
         case "$OPTION" in
             i) # Interactive screencapture option
@@ -57,6 +57,15 @@ main () {
             ;;
             
             a) # Capture everything
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
+            ;;
+
+            v) # Capture video of current screen
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -84,6 +93,7 @@ help_msg () {
     echo "options:"
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
+    echo "-v    Capture video of current screen."
 }
 
 # Handles which screencapture utility to use based on display server.
@@ -91,8 +101,10 @@ screen_handler () {
     local arg="$1"
     local filepath="$2"
 
-    if [[ -z "$filepath" ]]; then 
-        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png"; 
+    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
+    elif [[ -z "$filepath" ]]; then
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4";
     else
         filepath=$SSFILEPATH$2
     fi
@@ -273,6 +285,13 @@ mac_screencapture () {
             find_file "$2"
             push_logic
         ;;
+
+        -v)
+            $CAPTURE -v "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
     esac
 }
 
