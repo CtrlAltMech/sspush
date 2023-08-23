@@ -89,7 +89,7 @@ main () {
 
 # Help message
 help_msg () {
-    echo "Syntax: $(basename "$0") [-i|-a]  /optional/file/path/"
+    echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
     echo "options:"
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
@@ -100,7 +100,6 @@ help_msg () {
 screen_handler () {
     local arg="$1"
     local filepath="$2"
-
     if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
     elif [[ -z "$filepath" ]]; then
