@@ -13,6 +13,14 @@
 # Exit on error
 set -e
 
+# Capture utilities
+# You may set your own here if they're not in the $PATH:
+# readonly wayland_capture=/path/to/your/grim/installation
+readonly wayland_vid_capture=wf-recorder
+readonly wayland_capture=grim
+readonly x11_capture=maim
+readonly macos_capture=screencapture
+
 # Configuration path
 readonly CONFIG="$HOME/.config/sspushrc"
 
@@ -29,6 +37,7 @@ main () {
     # from here on we just work with $REMOTEDIR, since we know it's got a / at the end
     display_serv_check
     clipboard_check
+    dep_check
 
     if [[ -z "$1" ]]; then # No argument, pushes most recent screencap in folder
         find_file
@@ -270,6 +279,35 @@ name_gen () {
     generated_name="$filename.$extension"
 }
 
+# check for required utilities depending on platform
+dep_check () {
+    if [[ "$disp_server" == "wayland" ]]; then
+        local CAPTURE=$wayland_capture
+        local VID_CAPTURE=$wayland_vid_capture
+    elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
+        local CAPTURE=$x11_capture
+    elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
+        local CAPTURE=$macos_capture
+    fi
+
+    if [[ ! -x $(which $CAPTURE) ]]; then
+        echo -e "${RED}Capture utility $CAPTURE not found! ${ENDCOLOR}"
+        echo "$CAPTURE is required on $disp_server to capture images."
+        echo "Aborting..."
+        exit 1
+    fi
+
+    if [[ $disp_server == "wayland" ]]; then
+      if [[ ! -x $(which $VID_CAPTURE 2>/dev/null) ]]; then
+          echo -e "${RED}Video capture utility $VID_CAPTURE not found! ${ENDCOLOR}"
+          echo "$VID_CAPTURE is required on wayland to capture video."
+          echo "Aborting..."
+          exit 1
+      fi
+    fi
+
+}
+
 # macOS screencapture handler
 mac_screencapture () {
     case "$1" in
@@ -299,6 +337,12 @@ wayland_screencapture () {
     case "$1" in
         -i)
             $CAPTURE -g "$(slurp)" "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -v)
+            $wayland_vid_capture -g "$(slurp)" -f "$2"
             find_file "$2"
             push_logic
         ;;
