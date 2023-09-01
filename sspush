@@ -13,6 +13,14 @@
 # Exit on error
 set -e
 
+# Capture utilities
+# You may set your own here if they're not in the $PATH:
+# readonly wayland_capture=/path/to/your/grim/installation
+readonly wayland_vid_capture=wf-recorder
+readonly wayland_capture=grim
+readonly x11_capture=maim
+readonly macos_capture=screencapture
+
 # Configuration path
 readonly CONFIG="$HOME/.config/sspushrc"
 
