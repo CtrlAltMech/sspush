@@ -14,6 +14,7 @@ sspush is intended to make it simple to upload and share screenshots/images/file
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users using Wayland).
 - [grim](https://sr.ht/~emersion/grim/) locally (For Linux users using Wayland).
 - [slurp](https://github.com/emersion/slurp) locally (For Linux users using Wayland).
+- [wf-recorder](https://github.com/ammen99/wf-recorder) locally (For Linux users using Wayland).
 - [screencapture](https://support.apple.com/en-us/HT201361) locally (Default on macOS).
 - [libnotify](https://github.com/GNOME/libnotify) locally (For Linux users, only required if you need notifications).
 
