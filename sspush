@@ -34,7 +34,6 @@ readonly ENDCOLOR="\e[0m"
 main () {
     conf_check
     path_verify
-    # from here on we just work with $REMOTEDIR, since we know it's got a / at the end
     display_serv_check
     clipboard_check
     dep_check "$1"
@@ -306,6 +305,7 @@ dep_check () {
       fi
     fi
 }
+
 # macOS screencapture handler
 mac_screencapture () {
     case "$1" in
