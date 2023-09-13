@@ -19,6 +19,7 @@ set -e
 readonly wayland_vid_capture=wf-recorder
 readonly wayland_capture=grim
 readonly x11_capture=maim
+readonly x11_vid_capture=ffmpeg
 readonly macos_capture=screencapture
 
 # Configuration path
@@ -366,6 +367,16 @@ x11_screencapture () {
             $CAPTURE "$2"
             find_file
             push_logic
+	;;
+	
+	-v)
+            local screen_sel=$(slop -f "%x %y %w %h")
+	    read -r X Y W H < <(echo $screen_sel)
+	    echo $X $Y $W $H
+	    $x11_vid_capture -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+            -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+	    find_file "$2"
+	    push_logic
         ;;
     esac
 } 
