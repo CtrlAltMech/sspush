@@ -379,7 +379,9 @@ wayland_screencapture () {
 
         -v)
             # TODO: Add optional desktop notification when recording starts and when it stops.
-            $vid_capture -g "$(slurp)" -f "$2"
+            # TODO: Add debug option to not send output to /dev/null. Maybe?
+            echo "Press ctrl + c to end recording..."
+            $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
             find_file "$2"
             push_logic
         ;;
