@@ -96,6 +96,7 @@ main () {
     done
 }
 
+
 # Help message
 help_msg () {
     echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
@@ -103,53 +104,6 @@ help_msg () {
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
     echo "-v    Capture video of current screen."
-}
-
-# Handles which screencapture utility to use based on display server.
-screen_handler () {
-    local arg="$1"
-    local filepath="$2"
-    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
-        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
-    elif [[ -z "$filepath" ]]; then
-        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4";
-    else
-        filepath=$SSFILEPATH$2
-    fi
-
-    case "$disp_server" in
-        wayland)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            wayland_screencapture "$arg" "$filepath"
-            ;;
-
-        x11)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            x11_screencapture "$arg" "$filepath"
-            ;;
-
-        macos)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            mac_screencapture "$arg" "$filepath"
-            ;;
-    esac
-}
-
-path_verify () {
-    # ensure the remotepath ends in a /
-    # since we're concatenating the path with the name of the generated file
-    # path + '/' + filename.png
-    local remote_path_len=${#REMOTEDIR}
-    local last_char=${REMOTEDIR:remote_path_len-1:1}
-    if [[ $last_char != '/' ]]; then
-        REMOTEDIR=$REMOTEDIR'/'
-    fi
-
-    local local_path_len=${#SSFILEPATH}
-    local last_char=${SSFILEPATH:local_path_len-1:1}
-    if [[ $last_char != '/' ]]; then
-        SSFILEPATH=$SSFILEPATH'/'
-    fi
 }
 
 # Checks for config file, prompt to create if none exists.
@@ -163,26 +117,6 @@ conf_check () {
         . "$CONFIG" 
         conf_var_check 
     fi
-}
-
-# Clipboard check
-clipboard_check () {
-    case $disp_server in
-        wayland)
-            clip_util="wl-copy"
-            [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
-            ;;
-        x11)
-            clip_util="xclip -sel $CLIPBOARD"
-            ;;
-        macos)
-            clip_util="pbcopy"
-            ;;
-        *)
-            echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
-            exit 1
-            ;;
-    esac
 }
 
 # If no configuration file is seen it will prompt to generate one 
@@ -243,6 +177,39 @@ conf_make () {
     exit 0
 }
 
+
+
+# Verify that all configuration variables have been set, error if not
+conf_var_check () {
+    local msg="$(echo -e "${RED}All configuration variables need to be set at runtime.${ENDCOLOR}")"
+    : "${SSFILEPATH:?$msg}" 
+    : "${REMOTEDIR:?$msg}" 
+    : "${USERNAME:?$msg}" 
+    : "${KEYPATH:?$msg}" 
+    : "${PORT:?$msg}" 
+    : "${SERVER:?$msg}" 
+    : "${BASELINK:?$msg}" 
+    : "${NOTIFICATIONS:?$msg}" 
+    : "${CLIPBOARD:?$msg}" 
+}
+
+path_verify () {
+    # ensure the remotepath ends in a /
+    # since we're concatenating the path with the name of the generated file
+    # path + '/' + filename.png
+    local remote_path_len=${#REMOTEDIR}
+    local last_char=${REMOTEDIR:remote_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        REMOTEDIR=$REMOTEDIR'/'
+    fi
+
+    local local_path_len=${#SSFILEPATH}
+    local last_char=${SSFILEPATH:local_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        SSFILEPATH=$SSFILEPATH'/'
+    fi
+}
+
 # Checks which display server is running
 display_serv_check () {
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
@@ -257,26 +224,24 @@ display_serv_check () {
     fi
 }
 
-# Verify that all configuration variables have been set, error if not
-conf_var_check () {
-    local msg="$(echo -e "${RED}All configuration variables need to be set at runtime.${ENDCOLOR}")"
-    : "${SSFILEPATH:?$msg}" 
-    : "${REMOTEDIR:?$msg}" 
-    : "${USERNAME:?$msg}" 
-    : "${KEYPATH:?$msg}" 
-    : "${PORT:?$msg}" 
-    : "${SERVER:?$msg}" 
-    : "${BASELINK:?$msg}" 
-    : "${NOTIFICATIONS:?$msg}" 
-    : "${CLIPBOARD:?$msg}" 
-} 
-
-# Creates the new randomly generated filename for the remote destination
-name_gen () {
-    local filename=$1
-    local extension=${filename##*.}
-    filename=$(echo $RANDOM | md5sum | head -c 8; echo;)
-    generated_name="$filename.$extension"
+# Clipboard check
+clipboard_check () {
+    case $disp_server in
+        wayland)
+            clip_util="wl-copy"
+            [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
+            ;;
+        x11)
+            clip_util="xclip -sel $CLIPBOARD"
+            ;;
+        macos)
+            clip_util="pbcopy"
+            ;;
+        *)
+            echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
+            exit 1
+            ;;
+    esac
 }
 
 # check for required utilities depending on platform
@@ -305,6 +270,58 @@ dep_check () {
           exit 1
       fi
     fi
+}
+
+# Finds the file to push to remote server
+find_file() {
+    if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+        orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
+        name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
+    elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+        orig_file="$1"
+        name_gen "$1"
+    else
+        echo -e "${RED}File not found. Try again...${ENDCOLOR}"
+        exit 1
+    fi
+}
+
+# Handles which screencapture utility to use based on display server.
+screen_handler () {
+    local arg="$1"
+    local filepath="$2"
+    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
+    elif [[ -z "$filepath" ]]; then
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4";
+    else
+        filepath=$SSFILEPATH$2
+    fi
+
+    case "$disp_server" in
+        wayland)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            wayland_screencapture "$arg" "$filepath"
+            ;;
+
+        x11)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            x11_screencapture "$arg" "$filepath"
+            ;;
+
+        macos)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            mac_screencapture "$arg" "$filepath"
+            ;;
+    esac
+}
+
+# Creates the new randomly generated filename for the remote destination
+name_gen () {
+    local filename=$1
+    local extension=${filename##*.}
+    filename=$(echo $RANDOM | md5sum | head -c 8; echo;)
+    generated_name="$filename.$extension"
 }
 
 # macOS screencapture handler
@@ -370,9 +387,8 @@ x11_screencapture () {
 	;;
 	
 	-v)
-            local screen_sel=$(slop -f "%x %y %w %h")
+        local screen_sel=$(slop -f "%x %y %w %h")
 	    read -r X Y W H < <(echo $screen_sel)
-	    echo $X $Y $W $H
 	    $x11_vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
             -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
 	    find_file "$2"
@@ -407,19 +423,7 @@ notifications() {
     fi
 }
 
-# Finds the file to push to remote server
-find_file() {
-    if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
-        orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
-        name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
-    elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
-        orig_file="$1"
-        name_gen "$1"
-    else
-        echo -e "${RED}File not found. Try again...${ENDCOLOR}"
-        exit 1
-    fi
-}
+
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
