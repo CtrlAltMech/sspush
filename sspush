@@ -13,22 +13,40 @@
 # Exit on error
 set -e
 
+# TODO: Add optional overrides in configuration file.
+# Default capture utilities
+# You may set your own here if they're not in the $PATH:
+# Example: readonly wayland_capture=/path/to/your/grim/installation
+readonly wayland_vid_capture=wf-recorder
+readonly wayland_capture=grim
+readonly x11_capture=maim
+readonly x11_vid_capture=ffmpeg
+readonly macos_capture=screencapture
+
+# TODO: Add optional overrides in configuration file.
+# Default clipboard utilities
+# You may set your own here if they're not in the $PATH
+# Example: readonly wayland_clipboard=/path/to/your/clipboard/installation
+readonly wayland_clipboard="wl-copy"
+readonly x11_clipboard="xclip"
+readonly macos_clipboard="pbcopy"
+
 # Configuration path
 readonly CONFIG="$HOME/.config/sspushrc"
 
 # Output Colors
 readonly RED="\e[31m"
 readonly GREEN="\e[32m"
-readonly YELLOW='\e[33m'
+readonly YELLOW="\e[33m"
 readonly ENDCOLOR="\e[0m"
 
 # Main logic
 main () {
     conf_check
     path_verify
-    # from here on we just work with $REMOTEDIR, since we know it's got a / at the end
     display_serv_check
     clipboard_check
+    dep_check "$1"
 
     if [[ -z "$1" ]]; then # No argument, pushes most recent screencap in folder
         find_file
@@ -44,10 +62,10 @@ main () {
     fi
 
     # Option branch logic
-    while getopts ':iah' OPTION;  
+    while getopts ':iahv' OPTION;  
     do
         case "$OPTION" in
-            i) # Interactive screencapture option
+            i) # Interactive image screencapture option
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -56,7 +74,16 @@ main () {
                 fi
             ;;
             
-            a) # Capture everything
+            a) # Image capture entire desktop
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                    screen_handler "$1" "$2"
+                fi
+            ;;
+
+            v) # Capture video of current screen on macOS, interactive mode on Linux distros.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -78,58 +105,14 @@ main () {
     done
 }
 
+
 # Help message
 help_msg () {
-    echo "Syntax: $(basename "$0") [-i|-a]  /optional/file/path/"
+    echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
     echo "options:"
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
-}
-
-# Handles which screencapture utility to use based on display server.
-screen_handler () {
-    local arg="$1"
-    local filepath="$2"
-
-    if [[ -z "$filepath" ]]; then 
-        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png"; 
-    else
-        filepath=$SSFILEPATH$2
-    fi
-
-    case "$disp_server" in
-        wayland)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            wayland_screencapture "$arg" "$filepath"
-            ;;
-
-        x11)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            x11_screencapture "$arg" "$filepath"
-            ;;
-
-        macos)
-            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
-            mac_screencapture "$arg" "$filepath"
-            ;;
-    esac
-}
-
-path_verify () {
-    # ensure the remotepath ends in a /
-    # since we're concatenating the path with the name of the generated file
-    # path + '/' + filename.png
-    local remote_path_len=${#REMOTEDIR}
-    local last_char=${REMOTEDIR:remote_path_len-1:1}
-    if [[ $last_char != '/' ]]; then
-        REMOTEDIR=$REMOTEDIR'/'
-    fi
-
-    local local_path_len=${#SSFILEPATH}
-    local last_char=${SSFILEPATH:local_path_len-1:1}
-    if [[ $last_char != '/' ]]; then
-        SSFILEPATH=$SSFILEPATH'/'
-    fi
+    echo "-v    Capture video of current screen. (macOS does full screen, Linux uses slop for interactive screencapture)"
 }
 
 # Checks for config file, prompt to create if none exists.
@@ -143,26 +126,6 @@ conf_check () {
         . "$CONFIG" 
         conf_var_check 
     fi
-}
-
-# Clipboard check
-clipboard_check () {
-    case $disp_server in
-        wayland)
-            clip_util="wl-copy"
-            [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
-            ;;
-        x11)
-            clip_util="xclip -sel $CLIPBOARD"
-            ;;
-        macos)
-            clip_util="pbcopy"
-            ;;
-        *)
-            echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
-            exit 1
-            ;;
-    esac
 }
 
 # If no configuration file is seen it will prompt to generate one 
@@ -223,19 +186,6 @@ conf_make () {
     exit 0
 }
 
-# Checks which display server is running
-display_serv_check () {
-    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
-        disp_server="wayland"
-        CAPTURE=grim
-    elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
-        disp_server="x11"
-        CAPTURE=maim
-    elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
-        disp_server="macos" # macOS does not use XDG by default
-        CAPTURE=screencapture
-    fi
-}
 
 # Verify that all configuration variables have been set, error if not
 conf_var_check () {
@@ -249,7 +199,135 @@ conf_var_check () {
     : "${BASELINK:?$msg}" 
     : "${NOTIFICATIONS:?$msg}" 
     : "${CLIPBOARD:?$msg}" 
-} 
+}
+
+path_verify () {
+    # ensure the remotepath ends in a /
+    # since we're concatenating the path with the name of the generated file
+    # path + '/' + filename.png
+    local remote_path_len=${#REMOTEDIR}
+    local last_char=${REMOTEDIR:remote_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        REMOTEDIR=$REMOTEDIR'/'
+    fi
+
+    local local_path_len=${#SSFILEPATH}
+    local last_char=${SSFILEPATH:local_path_len-1:1}
+    if [[ $last_char != '/' ]]; then
+        SSFILEPATH=$SSFILEPATH'/'
+    fi
+}
+
+# Checks which display server is running and sets proper capture utility
+display_serv_check () {
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+        disp_server="$XDG_SESSION_TYPE"
+        capture="$wayland_capture"
+        vid_capture="$wayland_vid_capture"
+    elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
+        disp_server=$XDG_SESSION_TYPE
+        capture="$x11_capture"
+        vid_capture="$x11_vid_capture"
+    elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
+        disp_server="macos" # macOS does not use XDG by default
+        capture="$macos_capture"
+        vid_capture="$macos_capture" # Set for consistency
+    fi
+}
+
+# Clipboard check
+clipboard_check () {
+    case $disp_server in
+        wayland)
+            clip_util="$wayland_clipboard"
+            [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
+            ;;
+        x11)
+            clip_util="$x11_clipboard -sel $CLIPBOARD"
+            ;;
+        macos)
+            clip_util="$macos_clipboard"
+            ;;
+        *)
+            echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
+            exit 1
+            ;;
+    esac
+}
+
+# check for required utilities depending on platform
+# TODO: Work on a cleaner way to implement this.
+dep_check () {
+    if [[ "$disp_server" == "wayland" ]]; then
+        local img_capture="$wayland_capture"
+        local vid_capture="$wayland_vid_capture"
+    elif [[ "$disp_server" == "x11" ]]; then
+        local img_capture="$x11_capture"
+        local vid_capture="$x11_vid_capture"
+    elif [[ "$disp_server" == "macos" ]]; then
+        local capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
+    fi
+
+
+    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ -a|-i ]]; then
+        echo -e "${RED}Capture utility $img_capture not found! ${ENDCOLOR}"
+        echo "$img_capture is required on $disp_server to capture images."
+        echo "Aborting..."
+        exit 1
+
+    elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ -v ]]; then
+      if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
+          echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
+          echo "$vid_capture is required on wayland to capture video."
+          echo "Aborting..."
+          exit 1
+      fi
+    fi
+}
+
+# Finds the file to push to remote server
+find_file() {
+    if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
+        orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
+        name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
+    elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
+        orig_file="$1"
+        name_gen "$1"
+    else
+        echo -e "${RED}File not found. Try again...${ENDCOLOR}"
+        exit 1
+    fi
+}
+
+# Handles which screencapture utility to use based on display server.
+screen_handler () {
+    local arg="$1"
+    local filepath="$2"
+    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
+    elif [[ -z "$filepath" ]]; then
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4";
+    else
+        filepath=$SSFILEPATH$2
+    fi
+
+    case "$disp_server" in
+        wayland)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            wayland_screencapture "$arg" "$filepath"
+            ;;
+
+        x11)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            x11_screencapture "$arg" "$filepath"
+            ;;
+
+        macos)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            mac_screencapture "$arg" "$filepath"
+            ;;
+    esac
+}
 
 # Creates the new randomly generated filename for the remote destination
 name_gen () {
@@ -263,16 +341,24 @@ name_gen () {
 mac_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -i "$2"
+            $capture -i "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file "$2"
             push_logic
         ;;
+
+        -v)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            $vid_capture -v "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
     esac
 }
 
@@ -280,16 +366,26 @@ mac_screencapture () {
 wayland_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -g "$(slurp)" "$2"
+            $capture -g "$(slurp)" "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file
             push_logic
         ;;
+
+        -v)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            # TODO: Add debug option to not send output to /dev/null. Maybe?
+            echo "Press ctrl + c to end recording..."
+            $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
+            find_file "$2"
+            push_logic
+        ;;
+
     esac
 }
 
@@ -297,15 +393,26 @@ wayland_screencapture () {
 x11_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -s "$2"
+            $capture -s "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file
             push_logic
+	    ;;
+	
+	    -v)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            local screen_sel=$(slop -f "%x %y %w %h")
+	        read -r X Y W H < <(echo $screen_sel)
+	        echo "Press 'q' to end capture..."
+	        $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+            -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+	        find_file "$2"
+	        push_logic
         ;;
     esac
 } 
@@ -336,19 +443,7 @@ notifications() {
     fi
 }
 
-# Finds the file to push to remote server
-find_file() {
-    if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
-        orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
-        name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
-    elif [[ "$(ls -A "$1"  2>/dev/null)" ]] && [[ -n "$1" ]]; then # Argument provided. Pick selected photo.
-        orig_file="$1"
-        name_gen "$1"
-    else
-        echo -e "${RED}File not found. Try again...${ENDCOLOR}"
-        exit 1
-    fi
-}
+
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {

@@ -14,6 +14,7 @@ sspush is intended to make it simple to upload and share screenshots/images/file
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) locally (For Linux users using Wayland).
 - [grim](https://sr.ht/~emersion/grim/) locally (For Linux users using Wayland).
 - [slurp](https://github.com/emersion/slurp) locally (For Linux users using Wayland).
+- [wf-recorder](https://github.com/ammen99/wf-recorder) locally (For Linux users using Wayland).
 - [screencapture](https://support.apple.com/en-us/HT201361) locally (Default on macOS).
 - [libnotify](https://github.com/GNOME/libnotify) locally (For Linux users, only required if you need notifications).
 
@@ -74,6 +75,7 @@ CLIPBOARD="clipboard"
 - `sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and post.
 - `sspush -a <optional filename>` - Captures everything on all screens and posts.
 - `sspush -h <optional filename>` - Prints syntax help out to terminal.
+- `sspush -v <optional filename>` - Captures video (Interactive capture ONLY on linux, Fullscreen ONLY on macOS)
 
 ## Contributing :handshake:
 I would love to hear if there are any bugs or a requested feature! :heart:
@@ -91,8 +93,14 @@ If you would like to contribute to the sspush project, follow the instructions b
 The sspush bash script is released under the GNU General Public License v3.0. See the LICENSE file for more information.
 
 ## Stuff in the works
-- Dependency check
-- Add video capture options
+- Dependency check (Setup for a couple of dependencies, need to work in the rest of them)
 - General code refactoring.
 - Configuration sanitization.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
+- Notifications for start/stop of video record if notifications are set to on in configuration file.
+- Debug flag (for the video capture mainly, but other stuff as well.)
+- Issue with portrait monitor video capture being treated like landscape mode in Wayland. Issue listed [here](https://github.com/ammen99/wf-recorder/issues/3). Needs a fix.
+
+## Quirks
+- Issue with Firefox in macOS, wayland, and X11 (3 different machines) not playing unless the pixel format was set to yuv420p. This has been set to run like this by default.
+- (macOS specifically) Make sure you have given permissions for screenrecording to the terminal you use. You will receive a prompt to do so if not.
