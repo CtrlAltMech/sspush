@@ -13,14 +13,23 @@
 # Exit on error
 set -e
 
-# Capture utilities
+# TODO: Add optional overrides in configuration file.
+# Default capture utilities
 # You may set your own here if they're not in the $PATH:
-# readonly wayland_capture=/path/to/your/grim/installation
+# Example: readonly wayland_capture=/path/to/your/grim/installation
 readonly wayland_vid_capture=wf-recorder
 readonly wayland_capture=grim
 readonly x11_capture=maim
 readonly x11_vid_capture=ffmpeg
 readonly macos_capture=screencapture
+
+# TODO: Add optional overrides in configuration file.
+# Default clipboard utilities
+# You may set your own here if they're not in the $PATH
+# Example: readonly wayland_clipboard=/path/to/your/clipboard/installation
+readonly wayland_clipboard="wl-copy"
+readonly x11_clipboard="xclip"
+readonly macos_clipboard="pbcopy"
 
 # Configuration path
 readonly CONFIG="$HOME/.config/sspushrc"
@@ -56,7 +65,7 @@ main () {
     while getopts ':iahv' OPTION;  
     do
         case "$OPTION" in
-            i) # Interactive screencapture option
+            i) # Interactive image screencapture option
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -65,7 +74,7 @@ main () {
                 fi
             ;;
             
-            a) # Capture everything
+            a) # Image capture entire desktop
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -74,7 +83,7 @@ main () {
                 fi
             ;;
 
-            v) # Capture video of current screen
+            v) # Capture video of current screen on macOS, interactive mode on Linux distros.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -178,7 +187,6 @@ conf_make () {
 }
 
 
-
 # Verify that all configuration variables have been set, error if not
 conf_var_check () {
     local msg="$(echo -e "${RED}All configuration variables need to be set at runtime.${ENDCOLOR}")"
@@ -210,17 +218,20 @@ path_verify () {
     fi
 }
 
-# Checks which display server is running
+# Checks which display server is running and sets proper capture utility
 display_serv_check () {
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
-        disp_server="wayland"
-        capture=grim
+        disp_server="$XDG_SESSION_TYPE"
+        capture="$wayland_capture"
+        vid_capture="$wayland_vid_capture"
     elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
-        disp_server="x11"
-        capture=maim
+        disp_server=$XDG_SESSION_TYPE
+        capture="$x11_capture"
+        vid_capture="$x11_vid_capture"
     elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
         disp_server="macos" # macOS does not use XDG by default
-        capture=screencapture
+        capture="$macos_capture"
+        vid_capture="$macos_capture" # Set for consistency
     fi
 }
 
@@ -228,14 +239,14 @@ display_serv_check () {
 clipboard_check () {
     case $disp_server in
         wayland)
-            clip_util="wl-copy"
+            clip_util="$wayland_clipboard"
             [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
             ;;
         x11)
-            clip_util="xclip -sel $CLIPBOARD"
+            clip_util="$x11_clipboard -sel $CLIPBOARD"
             ;;
         macos)
-            clip_util="pbcopy"
+            clip_util="$macos_clipboard"
             ;;
         *)
             echo -e "${RED}Unable to determine display server. Exiting...${ENDCOLOR}"
@@ -245,20 +256,22 @@ clipboard_check () {
 }
 
 # check for required utilities depending on platform
+# TODO: Work on a cleaner way to implement this.
 dep_check () {
     if [[ "$disp_server" == "wayland" ]]; then
-        local capture=$wayland_capture
-        local vid_capture=$wayland_vid_capture
+        local img_capture="$wayland_capture"
+        local vid_capture="$wayland_vid_capture"
     elif [[ "$disp_server" == "x11" ]]; then
-        local capture=$x11_capture
+        local img_capture="$x11_capture"
+        local vid_capture="$x11_vid_capture"
     elif [[ "$disp_server" == "macos" ]]; then
-        local capture=$macos_capture
+        local capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
     fi
 
 
-    if [[ ! -x $(which "$capture") ]] && [[ "$1" =~ -a|-i ]]; then
-        echo -e "${RED}Capture utility $capture not found! ${ENDCOLOR}"
-        echo "$capture is required on $disp_server to capture images."
+    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ -a|-i ]]; then
+        echo -e "${RED}Capture utility $img_capture not found! ${ENDCOLOR}"
+        echo "$img_capture is required on $disp_server to capture images."
         echo "Aborting..."
         exit 1
 
@@ -340,7 +353,8 @@ mac_screencapture () {
         ;;
 
         -v)
-            $capture -v "$2"
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            $vid_capture -v "$2"
             find_file "$2"
             push_logic
         ;;
@@ -357,17 +371,19 @@ wayland_screencapture () {
             push_logic
         ;;
 
-        -v)
-            $wayland_vid_capture -g "$(slurp)" -f "$2"
-            find_file "$2"
-            push_logic
-        ;;
-
         -a)
             $capture "$2"
             find_file
             push_logic
         ;;
+
+        -v)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            $vid_capture -g "$(slurp)" -f "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
     esac
 }
 
@@ -387,10 +403,11 @@ x11_screencapture () {
 	    ;;
 	
 	    -v)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
             local screen_sel=$(slop -f "%x %y %w %h")
 	        read -r X Y W H < <(echo $screen_sel)
 	        echo "Press 'q' to end capture..."
-	        $x11_vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+	        $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
             -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
 	        find_file "$2"
 	        push_logic
