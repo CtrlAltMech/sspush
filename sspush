@@ -28,7 +28,7 @@ readonly CONFIG="$HOME/.config/sspushrc"
 # Output Colors
 readonly RED="\e[31m"
 readonly GREEN="\e[32m"
-readonly YELLOW='\e[33m'
+readonly YELLOW="\e[33m"
 readonly ENDCOLOR="\e[0m"
 
 # Main logic
@@ -103,7 +103,7 @@ help_msg () {
     echo "options:"
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
-    echo "-v    Capture video of current screen."
+    echo "-v    Capture video of current screen. (macOS does full screen, Linux uses slop for interactive screencapture)"
 }
 
 # Checks for config file, prompt to create if none exists.
@@ -214,13 +214,13 @@ path_verify () {
 display_serv_check () {
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
         disp_server="wayland"
-        CAPTURE=grim
+        capture=grim
     elif [[ "$XDG_SESSION_TYPE" == "x11" ]]; then
         disp_server="x11"
-        CAPTURE=maim
+        capture=maim
     elif [[ "$XDG_SESSION_TYPE" == "" ]]; then
         disp_server="macos" # macOS does not use XDG by default
-        CAPTURE=screencapture
+        capture=screencapture
     fi
 }
 
@@ -247,25 +247,25 @@ clipboard_check () {
 # check for required utilities depending on platform
 dep_check () {
     if [[ "$disp_server" == "wayland" ]]; then
-        local CAPTURE=$wayland_capture
-        local VID_CAPTURE=$wayland_vid_capture
+        local capture=$wayland_capture
+        local vid_capture=$wayland_vid_capture
     elif [[ "$disp_server" == "x11" ]]; then
-        local CAPTURE=$x11_capture
+        local capture=$x11_capture
     elif [[ "$disp_server" == "macos" ]]; then
-        local CAPTURE=$macos_capture
+        local capture=$macos_capture
     fi
 
 
-    if [[ ! -x $(which "$CAPTURE") ]] && [[ "$1" =~ -a|-i ]]; then
-        echo -e "${RED}Capture utility $CAPTURE not found! ${ENDCOLOR}"
-        echo "$CAPTURE is required on $disp_server to capture images."
+    if [[ ! -x $(which "$capture") ]] && [[ "$1" =~ -a|-i ]]; then
+        echo -e "${RED}Capture utility $capture not found! ${ENDCOLOR}"
+        echo "$capture is required on $disp_server to capture images."
         echo "Aborting..."
         exit 1
 
     elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ -v ]]; then
-      if [[ ! -x $(which "$VID_CAPTURE" 2>/dev/null) ]]; then
-          echo -e "${RED}Video capture utility $VID_CAPTURE not found! ${ENDCOLOR}"
-          echo "$VID_CAPTURE is required on wayland to capture video."
+      if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
+          echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
+          echo "$vid_capture is required on wayland to capture video."
           echo "Aborting..."
           exit 1
       fi
@@ -328,19 +328,19 @@ name_gen () {
 mac_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -i "$2"
+            $capture -i "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file "$2"
             push_logic
         ;;
 
         -v)
-            $CAPTURE -v "$2"
+            $capture -v "$2"
             find_file "$2"
             push_logic
         ;;
@@ -352,7 +352,7 @@ mac_screencapture () {
 wayland_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -g "$(slurp)" "$2"
+            $capture -g "$(slurp)" "$2"
             find_file "$2"
             push_logic
         ;;
@@ -364,7 +364,7 @@ wayland_screencapture () {
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file
             push_logic
         ;;
@@ -375,24 +375,25 @@ wayland_screencapture () {
 x11_screencapture () {
     case "$1" in
         -i)
-            $CAPTURE -s "$2"
+            $capture -s "$2"
             find_file "$2"
             push_logic
         ;;
 
         -a)
-            $CAPTURE "$2"
+            $capture "$2"
             find_file
             push_logic
-	;;
+	    ;;
 	
-	-v)
-        local screen_sel=$(slop -f "%x %y %w %h")
-	    read -r X Y W H < <(echo $screen_sel)
-	    $x11_vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+	    -v)
+            local screen_sel=$(slop -f "%x %y %w %h")
+	        read -r X Y W H < <(echo $screen_sel)
+	        echo "Press 'q' to end capture..."
+	        $x11_vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
             -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
-	    find_file "$2"
-	    push_logic
+	        find_file "$2"
+	        push_logic
         ;;
     esac
 } 
