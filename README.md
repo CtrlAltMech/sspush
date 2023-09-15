@@ -103,3 +103,4 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 
 ## Quirks
 - Issue with Firefox in macOS, wayland, and X11 (3 different machines) not playing unless the pixel format was set to yuv420p. This has been set to run like this by default.
+- (macOS specifically) Make sure you have given permissions for screenrecording to the terminal you use. You will receive a prompt to do so if not.
