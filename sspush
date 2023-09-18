@@ -265,7 +265,7 @@ dep_check () {
         local img_capture="$x11_capture"
         local vid_capture="$x11_vid_capture"
     elif [[ "$disp_server" == "macos" ]]; then
-        local capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
+        local img_capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
     fi
 
 
