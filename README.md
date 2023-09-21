@@ -97,7 +97,6 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 - General code refactoring.
 - Configuration sanitization.
 - Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
-- Notifications for start/stop of video record if notifications are set to on in configuration file.
 - Debug flag (for the video capture mainly, but other stuff as well.)
 - Issue with portrait monitor video capture being treated like landscape mode in Wayland. Issue listed [here](https://github.com/ammen99/wf-recorder/issues/3). Needs a fix.
 
