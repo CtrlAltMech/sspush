@@ -409,13 +409,18 @@ x11_screencapture () {
 	    -v)
             local screen_sel=$(slop -f "%x %y %w %h")
 	        read -r X Y W H < <(echo $screen_sel)
-	        echo "Press 'q' to end recording..."
-            notifications "Recording started..."
-	        $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
-            -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
-            notifications "Recording stopped!"
-	        find_file "$2"
-	        push_logic
+	        if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
+	        	exit 1
+	        else
+	            echo "Press 'q' to end recording..."
+                notifications "Recording started..."
+	            $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+                -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+                notifications "Recording stopped!"
+	            find_file "$2"
+	            push_logic
+	        fi
+
         ;;
     esac
 } 
