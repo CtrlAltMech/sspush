@@ -9,9 +9,9 @@
 # by CtrlAltMech
 #
 
-
 # Exit on error
 set -e
+#set -x
 
 # TODO: Add optional overrides in configuration file.
 # Default capture utilities
@@ -354,7 +354,9 @@ mac_screencapture () {
 
         -v)
             # TODO: Add optional desktop notification when recording starts and when it stops.
+            notifications "Recording started..."
             $vid_capture -v "$2"
+            notifications "Recording stopped!"
             find_file "$2"
             push_logic
         ;;
@@ -380,8 +382,10 @@ wayland_screencapture () {
         -v)
             # TODO: Add optional desktop notification when recording starts and when it stops.
             # TODO: Add debug option to not send output to /dev/null. Maybe?
-            echo "Press ctrl + c to end recording..."
+            echo "Press 'CTRL + c' to end recording..."
+            notifications "Recording started..."
             $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
+            notifications "Recording stopped!"
             find_file "$2"
             push_logic
         ;;
@@ -408,9 +412,11 @@ x11_screencapture () {
             # TODO: Add optional desktop notification when recording starts and when it stops.
             local screen_sel=$(slop -f "%x %y %w %h")
 	        read -r X Y W H < <(echo $screen_sel)
-	        echo "Press 'q' to end capture..."
+	        echo "Press 'q' to end recording..."
+            notifications "Recording started..."
 	        $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
             -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+            notifications "Recording stopped!"
 	        find_file "$2"
 	        push_logic
         ;;
@@ -423,15 +429,17 @@ notifications() {
     if [[ "$NOTIFICATIONS" == "allow" ]]; then
         case "$disp_server" in
             "macos")
-                osascript -e 'display notification "'$(basename "$orig_file")'" with title "Uploaded!"'
+                osascript -e 'display notification "'"$1"'" with title "sspush"'
                 ;;
 
             "x11")
-                notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                #notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                notify-send -t 4000 "sspush" "$1"
                 ;;
 
             "wayland")
-                notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                #notify-send -t 4000 "Uploaded!" "$(basename "$orig_file")"
+                notify-send -t 4000 "sspush" "$1"
                 ;;
             *)
                 :
@@ -448,7 +456,7 @@ notifications() {
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server 
-    notifications # Shows a notification if allowed in config file
+    notifications "$(basename "$orig_file") uploaded!" # Shows a notification if allowed in config file
     case "$disp_server" in
         macos)
             echo "$BASELINK$generated_name" | $clip_util
