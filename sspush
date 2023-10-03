@@ -41,6 +41,14 @@ readonly ENDCOLOR="\e[0m"
 
 # Main logic
 main () {
+    # run-once-then-exit 'utility' args
+    if [[ $1 == "-h" || $1 == "--help" ]]; then
+      help_msg
+      exit 0
+    elif [[ $1 == "-c" || $1 == "--make-conf" ]]; then
+      conf_make
+      exit 0
+    fi
     conf_check
     path_verify
     display_serv_check
@@ -67,7 +75,7 @@ main () {
             i) # Interactive image screencapture option
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
-                    exit 1
+                    exit 0
                 else
                     screen_handler "$1" "$2"
                 fi
@@ -93,12 +101,12 @@ main () {
 
             h) # Print syntax help
                 help_msg
-                exit 1
+                exit 0 # clean exit
             ;;
 
             \?) # Catch everything else
                 help_msg
-                exit 1
+                exit 1 # error - invalid input
             ;;
         esac
     done
@@ -109,9 +117,11 @@ main () {
 help_msg () {
     echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
     echo "options:"
+    echo "-c | --make-conf    Generate an empty config file and open it in your \$EDITOR"
+    echo "-h | --help         Show this help message."
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
-    echo "-v    Capture video of current screen. (macOS does full screen, Linux uses slop for interactive screencapture)"
+    echo "-v    Capture video of current screen (macOS does full screen, Linux uses slop for interactive screencapture)."
 }
 
 # Checks for config file, prompt to create if none exists.
