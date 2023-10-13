@@ -45,10 +45,13 @@ main () {
     if [[ $1 == "-h" || $1 == "--help" ]]; then
       help_msg
       exit 0
+
     elif [[ $1 == "-c" || $1 == "--make-conf" ]]; then
       conf_make
       exit 0
+
     fi
+
     conf_check
     path_verify
     display_serv_check
@@ -69,7 +72,8 @@ main () {
     fi
 
     # Option branch logic
-    while getopts ':iahv' OPTION;  
+    # while getopts ':iahv' OPTION;  
+    while getopts ':iav' OPTION;  
     do
         case "$OPTION" in
             i) # Interactive image screencapture option
@@ -97,11 +101,6 @@ main () {
                 else
                     screen_handler "$1" "$2"
                 fi
-            ;;
-
-            h) # Print syntax help
-                help_msg
-                exit 0 # clean exit
             ;;
 
             \?) # Catch everything else
