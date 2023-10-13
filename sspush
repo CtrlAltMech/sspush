@@ -72,7 +72,6 @@ main () {
     fi
 
     # Option branch logic
-    # while getopts ':iahv' OPTION;  
     while getopts ':iav' OPTION;  
     do
         case "$OPTION" in
