@@ -66,6 +66,8 @@ NOTIFICATIONS=""
 CLIPBOARD="clipboard"
 ```
 
+*Be aware: references to your home directory in the conf file must be done with $HOME, not ~. $HOME is a shell variable, and ~ is an expansion symbol.*
+
 2. Once the configuration file is created your editor should open to edit the file.
 3. When the configuration file is filled out run the command again to push your file.
 4. A link will be copied to your clipboard as well as printed out to the terminal.

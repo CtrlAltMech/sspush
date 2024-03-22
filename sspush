@@ -162,6 +162,7 @@ conf_make () {
 	# Config file for sspush
 	 
 	# Filepath where screenshots are stored
+  # NOTE: References to your home directory must be done with $HOME, not ~.
 	SSFILEPATH=""
 	
 	# Remote directory where screenshots are stored
