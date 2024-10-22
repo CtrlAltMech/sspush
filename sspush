@@ -21,6 +21,8 @@ readonly wayland_capture=grim
 readonly x11_capture=maim
 readonly x11_vid_capture=ffmpeg
 readonly macos_capture=screencapture
+readonly kde_capture=spectacle
+readonly kde_vid_capture=spectacle
 
 # TODO: Add optional overrides in configuration file.
 # Default clipboard utilities
@@ -230,7 +232,11 @@ path_verify () {
 
 # Checks which display server is running and sets proper capture utility
 display_serv_check () {
-    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+    if [[ "$XDG_SESSION_DESKTOP" == "KDE" ]]; then
+        disp_server="KDE"
+        capture="$kde_capture"
+        vid_capture="$kde_vid_capture"
+    elif [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
         disp_server="$XDG_SESSION_TYPE"
         capture="$wayland_capture"
         vid_capture="$wayland_vid_capture"
@@ -248,7 +254,7 @@ display_serv_check () {
 # Clipboard check
 clipboard_check () {
     case $disp_server in
-        wayland)
+        wayland | KDE)
             clip_util="$wayland_clipboard"
             [[ $CLIPBOARD == "clipboard" ]] || clip_util="wl-copy --primary"
             ;;
@@ -268,7 +274,10 @@ clipboard_check () {
 # check for required utilities depending on platform
 # TODO: Work on a cleaner way to implement this.
 dep_check () {
-    if [[ "$disp_server" == "wayland" ]]; then
+    if [[ "$disp_server" == "KDE" || "$disp_server" == "kde" ]]; then
+        local img_capture="$kde_capture"
+        local vid_capture="$kde_vid_capture"
+    elif [[ "$disp_server" == "wayland" ]]; then
         local img_capture="$wayland_capture"
         local vid_capture="$wayland_vid_capture"
     elif [[ "$disp_server" == "x11" ]]; then
@@ -277,7 +286,6 @@ dep_check () {
     elif [[ "$disp_server" == "macos" ]]; then
         local img_capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
     fi
-
 
     if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ -a|-i ]]; then
         echo -e "${RED}Capture utility $img_capture not found! ${ENDCOLOR}"
@@ -289,6 +297,13 @@ dep_check () {
       if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
           echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
           echo "$vid_capture is required on wayland to capture video."
+          echo "Aborting..."
+          exit 1
+      fi
+    elif [[ $disp_server == "KDE" ]] && [[ "$1" =~ -v ]]; then
+      if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
+          echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
+          echo "$vid_capture is required on KDE to capture video."
           echo "Aborting..."
           exit 1
       fi
@@ -313,15 +328,24 @@ find_file() {
 screen_handler () {
     local arg="$1"
     local filepath="$2"
+    local extension=".mp4"
+    if [[ $disp_server == "KDE" ]]; then
+      extension=".webm"
+    fi
     if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
     elif [[ -z "$filepath" ]]; then
-        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").mp4";
+        filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S")$extension";
     else
         filepath=$SSFILEPATH$2
     fi
 
     case "$disp_server" in
+        kde | KDE)
+            echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
+            kde_screencapture "$arg" "$filepath"
+            ;;
+
         wayland)
             echo -e "${YELLOW}Screencapture in progress, file to be created: $(basename "$filepath")${ENDCOLOR}"
             wayland_screencapture "$arg" "$filepath"
@@ -402,6 +426,32 @@ wayland_screencapture () {
     esac
 }
 
+# KDE screencapture 
+kde_screencapture () {
+    case "$1" in
+        -i)
+            $capture -rbn -o "$2"
+            find_file "$2"
+            push_logic
+        ;;
+
+        -a)
+            $capture -f -o "$2"
+            find_file
+            push_logic
+	    ;;
+	
+	    -v)
+              notifications "Recording started..."
+	            $kde_vid_capture -bnp -R r -o "$2"
+              notifications "Recording stopped!"
+	            find_file "$2"
+	            push_logic
+
+        ;;
+    esac
+} 
+
 # X11 screencapture 
 x11_screencapture () {
     case "$1" in
@@ -418,7 +468,7 @@ x11_screencapture () {
 	    ;;
 	
 	    -v)
-            local screen_sel=$(slop -f "%x %y %w %h")
+          local screen_sel=$(slop -f "%x %y %w %h")
 	        read -r X Y W H < <(echo $screen_sel)
 	        if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
 	        	exit 1
@@ -469,6 +519,9 @@ push_logic () {
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server 
     notifications "$(basename "$orig_file") uploaded!" # Shows a confirmation of upload notification if allowed in config
     case "$disp_server" in
+        KDE)
+            echo "$BASELINK$generated_name" | $clip_util
+            ;;
         macos)
             echo "$BASELINK$generated_name" | $clip_util
             ;;
