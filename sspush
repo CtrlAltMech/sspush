@@ -186,9 +186,9 @@ conf_make () {
 	# Example https://mysite.net/pics/<your image name>.jpg"
 	BASELINK=""
 
-  # if method is empty, the link is just hosted by in a directory served by a a web server.
-  # if it's raqlink, we're using the raqlink image hosting service, and it returns us the url
-  METHOD=""
+  	# if method is empty, the link is just hosted by in a directory served by a a web server.
+  	# if it's raqlink, we're using the raqlink image hosting service, and it returns us the url
+  	METHOD=""
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
