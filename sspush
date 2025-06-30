@@ -185,6 +185,10 @@ conf_make () {
 	# Base link location (Link minus the image that the user will visit).
 	# Example https://mysite.net/pics/<your image name>.jpg"
 	BASELINK=""
+
+  	# if method is empty, the link is just hosted by in a directory served by a a web server.
+  	# if it's raqlink, we're using the raqlink image hosting service, and it returns us the url
+  	METHOD=""
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
@@ -209,6 +213,7 @@ conf_var_check () {
     : "${PORT:?$msg}" 
     : "${SERVER:?$msg}" 
     : "${BASELINK:?$msg}" 
+    : "${METHOD:?$msg}"
     : "${NOTIFICATIONS:?$msg}" 
     : "${CLIPBOARD:?$msg}" 
 }
@@ -232,7 +237,7 @@ path_verify () {
 
 # Checks which display server is running and sets proper capture utility
 display_serv_check () {
-    if [[ "$XDG_SESSION_DESKTOP" == "KDE" ]]; then
+    if [[ "$XDG_SESSION_DESKTOP" == "KDE" ]] || [[ "$XDG_SESSION_DESKTOP" == "plasma" ]]; then
         disp_server="KDE"
         capture="$kde_capture"
         vid_capture="$kde_vid_capture"
@@ -311,7 +316,7 @@ dep_check () {
 }
 
 # Finds the file to push to remote server
-find_file() {
+find_file () {
     if [[ "$(ls -A "$SSFILEPATH" 2>/dev/null)" ]] && [[ -z "$1" ]]; then # No argument provided, most recent file found
         orig_file="$SSFILEPATH"$(ls -Art "$SSFILEPATH" | tail -n 1)
         name_gen "$(ls -Art "$SSFILEPATH" | tail -n 1)"
@@ -512,10 +517,16 @@ notifications() {
     fi
 }
 
-
+raqlink_push () {
+  curl --header 'Additional: Header' --form additional=image --form image=@$1 $BASELINK
+}
 
 # Takes all the curated information, pushes it to the server, provides a link
 push_logic () {
+    if [[ "$METHOD" == "raqlink" ]];  then
+      raqlink_push "$orig_file" | $clip_util
+      exit 0
+    fi
     scp -i "$KEYPATH" "$orig_file" "$USERNAME@$SERVER":"$REMOTEDIR$generated_name" # Transfer that file to the remote server 
     notifications "$(basename "$orig_file") uploaded!" # Shows a confirmation of upload notification if allowed in config
     case "$disp_server" in

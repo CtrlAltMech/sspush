@@ -60,6 +60,10 @@ SERVER=""
 # Example https://mysite.net/pics/<your image name>.jpg"
 BASELINK=""
 
+# If you're using a standard old webserver serving content from a directory, leave this blank.
+# If you're using https://github.com/hlmtre/raqlink, put 'raqlink' in here.
+METHOD=""
+
 # Allow/Deny desktop notifications
 NOTIFICATIONS=""
 
