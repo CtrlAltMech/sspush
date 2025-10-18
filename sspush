@@ -213,7 +213,6 @@ conf_var_check () {
     : "${PORT:?$msg}" 
     : "${SERVER:?$msg}" 
     : "${BASELINK:?$msg}" 
-    : "${METHOD:?$msg}"
     : "${NOTIFICATIONS:?$msg}" 
     : "${CLIPBOARD:?$msg}" 
 }
