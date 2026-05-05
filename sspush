@@ -186,9 +186,9 @@ conf_make () {
 	# Example https://mysite.net/pics/<your image name>.jpg"
 	BASELINK=""
 
-  	# if method is empty, the link is just hosted by in a directory served by a a web server.
-  	# if it's raqlink, we're using the raqlink image hosting service, and it returns us the url
-  	METHOD=""
+  # if method is empty, the link is just hosted by in a directory served by a a web server.
+  # if it's raqlink, we're using the raqlink image hosting service, and it returns us the url
+  METHOD=""
 	
 	# Allow/Deny desktop notifications
 	NOTIFICATIONS=""
@@ -206,15 +206,19 @@ conf_make () {
 # Verify that all configuration variables have been set, error if not
 conf_var_check () {
     local msg="$(echo -e "${RED}All configuration variables need to be set at runtime.${ENDCOLOR}")"
-    : "${SSFILEPATH:?$msg}" 
-    : "${REMOTEDIR:?$msg}" 
-    : "${USERNAME:?$msg}" 
-    : "${KEYPATH:?$msg}" 
-    : "${PORT:?$msg}" 
-    : "${SERVER:?$msg}" 
-    : "${BASELINK:?$msg}" 
-    : "${NOTIFICATIONS:?$msg}" 
-    : "${CLIPBOARD:?$msg}" 
+    if [[ $METHOD == "raqlink" ]]; then
+      : "${BASELINK?msg}"
+    else
+      : "${SSFILEPATH:?$msg}"
+      : "${REMOTEDIR:?$msg}"
+      : "${USERNAME:?$msg}"
+      : "${KEYPATH:?$msg}"
+      : "${PORT:?$msg}"
+      : "${SERVER:?$msg}"
+      : "${BASELINK:?$msg}"
+      : "${NOTIFICATIONS:?$msg}"
+      : "${CLIPBOARD:?$msg}"
+    fi
 }
 
 path_verify () {
@@ -312,6 +316,35 @@ dep_check () {
           exit 1
       fi
     fi
+    case "$disp_server" in
+      wayland|KDE|kde)
+        if [[ ! -x $(which "$wayland_clipboard" 2>/dev/null) ]]; then
+          echo -e "${RED}Clipboard utility $wayland_clipboard not found! ${ENDCOLOR}"
+          echo "$wayland_clipboard is required on wayland to copy to the clipboard."
+          echo "Aborting..."
+          exit 1
+        fi
+        ;;
+      x11)
+        if [[ ! -x $(which "$x11_clipboard" 2>/dev/null) ]]; then
+          echo -e "${RED}Clipboard utility $x11_clipboard not found! ${ENDCOLOR}"
+          echo "$x11_clipboard is required on x11 to copy to the clipboard."
+          echo "Aborting..."
+          exit 1
+        fi
+        ;;
+      macos)
+        if [[ ! -x $(which "$macos_clipboard" 2>/dev/null) ]]; then
+          echo -e "${RED}Clipboard utility $macos_clipboard not found! ${ENDCOLOR}"
+          echo "$macos_clipboard is required on macos to copy to the clipboard."
+          echo "Aborting..."
+          exit 1
+        fi
+        ;;
+
+      *)
+        break;;
+    esac
 }
 
 # Finds the file to push to remote server
