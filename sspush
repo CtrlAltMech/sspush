@@ -71,7 +71,7 @@ main () {
     fi
 
     # Option branch logic
-    while getopts ':iahv' OPTION;  
+    while getopts ':iahvIAV' OPTION;  
     do
         case "$OPTION" in
             i) # Interactive image screencapture option
@@ -98,6 +98,36 @@ main () {
                     exit 1
                 else
                     screen_handler "$1" "$2"
+                fi
+            ;;
+
+            I)
+              # Interactive, but saved local only.
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  echo "Interactive"
+                fi
+            ;;
+            
+            A)
+              # Capture whole screen, but saved local only.
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  echo "Whole Screen"
+                fi
+            ;;
+
+            V)
+              # Capture video of current screen on macOS, interactive mode on Linux distros. Local only
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  echo "Video"
                 fi
             ;;
 
