@@ -108,6 +108,7 @@ main () {
                     exit 1
                 else
                   echo "Interactive"
+                  screen_handler "$1" "$2"
                 fi
             ;;
             
@@ -118,6 +119,7 @@ main () {
                     exit 1
                 else
                   echo "Whole Screen"
+                  screen_handler "$1" "$2"
                 fi
             ;;
 
@@ -128,6 +130,7 @@ main () {
                     exit 1
                 else
                   echo "Video"
+                  screen_handler "$1" "$2"
                 fi
             ;;
 
@@ -446,7 +449,7 @@ wayland_screencapture () {
             find_file
             push_logic
         ;;
-
+        
         -v)
             # TODO: Add debug option to not send output to /dev/null. Maybe?
             echo "Press 'CTRL + c' to end recording..."
@@ -456,6 +459,31 @@ wayland_screencapture () {
             find_file "$2"
             push_logic
         ;;
+        
+        -I)
+            $capture -g "$(slurp)" "$2"
+            find_file "$2"
+            echo "Interactive file saved locally"
+            #push_logic
+        ;;
+        
+        -A)
+            $capture "$2"
+            find_file
+            echo "Fullscreen file saved locally"
+            #push_logic
+        ;;
+        
+        -V)
+            # TODO: Add debug option to not send output to /dev/null. Maybe?
+            echo "Press 'CTRL + c' to end recording..."
+            notifications "Recording started..."
+            $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
+            notifications "Recording stopped!"
+            find_file "$2"
+            #push_logic
+        ;;
+
 
     esac
 }
