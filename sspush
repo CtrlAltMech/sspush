@@ -124,7 +124,7 @@ main () {
             ;;
 
             V)
-              # Capture video of current screen on macOS, interactive mode on Linux distros. Local only
+              # Capture video and save locally.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -150,13 +150,16 @@ main () {
 
 # Help message
 help_msg () {
-    echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
+    echo "Syntax: $(basename "$0") [-i|-a|-v|-I|-A|-V]  /optional/file/path/"
     echo "options:"
     echo "-c | --make-conf    Generate an empty config file and open it in your \$EDITOR"
     echo "-h | --help         Show this help message."
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
-    echo "-v    Capture video of current screen (macOS does full screen, Linux uses slop for interactive screencapture)."
+    echo "-v    Capture video of current screen and push to server. (macOS does full screen, Linux uses slop for interactive screencapture)."
+    echo "-I    Interactive mode, select portion of screen to capture and save locally."
+    echo "-A    Capture everything on screen and save locally." 
+    echo "-V    Capture video of current screen and save locally. (macOS does full screen, Linux uses slop for interactive screencapture)."
 }
 
 # Checks for config file, prompt to create if none exists.
@@ -369,7 +372,7 @@ screen_handler () {
     if [[ $disp_server == "KDE" ]]; then
       extension=".webm"
     fi
-    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
+    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]] && [[ "$arg" != "-V" ]]; then 
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
     elif [[ -z "$filepath" ]]; then
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S")$extension";
