@@ -546,13 +546,13 @@ kde_screencapture () {
 	      ;;
 	
 	      -V)
-              notifications "Recording started..."
-	            $kde_vid_capture -bnp -R r -o "$2"
-              notifications "Recording stopped!"
-	            find_file "$2"
-              echo "Video saved locally"
-
+            notifications "Recording started..."
+            $kde_vid_capture -bnp -R r -o "$2"
+            notifications "Recording stopped!"
+            find_file "$2"
+            echo "Video saved locally"
         ;;
+
     esac
 } 
 
@@ -578,12 +578,40 @@ x11_screencapture () {
               exit 1
             else
                 echo "Press 'q' to end recording..."
-                  notifications "Recording started..."
+                notifications "Recording started..."
                 $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
                   -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
-                  notifications "Recording stopped!"
+                notifications "Recording stopped!"
                 find_file "$2"
                 push_logic
+            fi
+        ;;
+
+        -I)
+            $capture -s "$2"
+            find_file "$2"
+            echo "Interactive saved locally."
+        ;;
+
+        -A)
+            $capture "$2"
+            find_file
+            echo "Whole desktop saved locally"
+        ;;
+        
+        -V)
+            local screen_sel=$(slop -f "%x %y %w %h")
+            read -r X Y W H < <(echo $screen_sel)
+            if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
+              exit 1
+            else
+                echo "Press 'q' to end recording..."
+                notifications "Recording started..."
+                $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+                  -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+                notifications "Recording stopped!"
+                find_file "$2"
+                echo "Video capture saved locally"
             fi
         ;;
     esac
