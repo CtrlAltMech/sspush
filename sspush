@@ -270,7 +270,7 @@ path_verify () {
     fi
 }
 
-# Checks which display server is running and sets proper capture utility
+# Checks which display server or desktop is running and sets proper capture utility
 display_serv_check () {
     if [[ "$XDG_SESSION_DESKTOP" == "KDE" ]] || [[ "$XDG_SESSION_DESKTOP" == "plasma" ]]; then
         disp_server="KDE"
@@ -435,6 +435,24 @@ mac_screencapture () {
             push_logic
         ;;
 
+        -I)
+            $capture -i "$2"
+            find_file "$2"
+        ;;
+
+        -A)
+            $capture "$2"
+            find_file "$2"
+        ;;
+
+        -V)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            notifications "Recording started..."
+            $vid_capture -v "$2"
+            notifications "Recording stopped!"
+            find_file "$2"
+        ;;
+
     esac
 }
 
@@ -482,7 +500,7 @@ wayland_screencapture () {
             echo "Press 'CTRL + c' to end recording..."
             notifications "Recording started..."
             $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
-            notifications "Recording stopped!"
+            notifications "Recording stopped! Saved locally."
             find_file "$2"
             #push_logic
         ;;
@@ -504,14 +522,35 @@ kde_screencapture () {
             $capture -f -o "$2"
             find_file
             push_logic
-	    ;;
+	      ;;
 	
-	    -v)
+	      -v)
               notifications "Recording started..."
 	            $kde_vid_capture -bnp -R r -o "$2"
               notifications "Recording stopped!"
 	            find_file "$2"
 	            push_logic
+
+        ;;
+
+        -I)
+            $capture -rbn -o "$2"
+            find_file "$2"
+            echo "Interactive saved locally"
+        ;;
+
+        -A)
+            $capture -f -o "$2"
+            find_file
+            echo "Entire desktop saved locally"
+	      ;;
+	
+	      -V)
+              notifications "Recording started..."
+	            $kde_vid_capture -bnp -R r -o "$2"
+              notifications "Recording stopped!"
+	            find_file "$2"
+              echo "Video saved locally"
 
         ;;
     esac
@@ -530,23 +569,22 @@ x11_screencapture () {
             $capture "$2"
             find_file
             push_logic
-	    ;;
-	
-	    -v)
-          local screen_sel=$(slop -f "%x %y %w %h")
-	        read -r X Y W H < <(echo $screen_sel)
-	        if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
-	        	exit 1
-	        else
-	            echo "Press 'q' to end recording..."
-                notifications "Recording started..."
-	            $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
-                -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
-                notifications "Recording stopped!"
-	            find_file "$2"
-	            push_logic
-	        fi
-
+        ;;
+        
+        -v)
+            local screen_sel=$(slop -f "%x %y %w %h")
+            read -r X Y W H < <(echo $screen_sel)
+            if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
+              exit 1
+            else
+                echo "Press 'q' to end recording..."
+                  notifications "Recording started..."
+                $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+                  -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+                  notifications "Recording stopped!"
+                find_file "$2"
+                push_logic
+            fi
         ;;
     esac
 } 
