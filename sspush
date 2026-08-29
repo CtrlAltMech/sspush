@@ -107,7 +107,6 @@ main () {
                     help_msg
                     exit 1
                 else
-                  echo "Interactive"
                   screen_handler "$1" "$2"
                 fi
             ;;
@@ -118,7 +117,6 @@ main () {
                     help_msg
                     exit 1
                 else
-                  echo "Whole Screen"
                   screen_handler "$1" "$2"
                 fi
             ;;
@@ -129,7 +127,6 @@ main () {
                     help_msg
                     exit 1
                 else
-                  echo "Video"
                   screen_handler "$1" "$2"
                 fi
             ;;
@@ -327,20 +324,20 @@ dep_check () {
         local img_capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
     fi
 
-    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ -a|-i ]]; then
+    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ @(-a|-i|-A|-I) ]]; then
         echo -e "${RED}Capture utility $img_capture not found! ${ENDCOLOR}"
         echo "$img_capture is required on $disp_server to capture images."
         echo "Aborting..."
         exit 1
 
-    elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ -v ]]; then
+      elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ @(-v|-V) ]]; then
       if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
           echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
           echo "$vid_capture is required on wayland to capture video."
           echo "Aborting..."
           exit 1
       fi
-    elif [[ $disp_server == "KDE" ]] && [[ "$1" =~ -v ]]; then
+    elif [[ $disp_server == "KDE" ]] && [[ "$1" =~ @(-v|-V) ]]; then
       if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
           echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
           echo "$vid_capture is required on KDE to capture video."
@@ -484,15 +481,13 @@ wayland_screencapture () {
         -I)
             $capture -g "$(slurp)" "$2"
             find_file "$2"
-            echo "Interactive file saved locally"
-            #push_logic
+            echo "Screenshot saved locally!"
         ;;
         
         -A)
             $capture "$2"
             find_file
-            echo "Fullscreen file saved locally"
-            #push_logic
+            echo "Screenshot saved locally!"
         ;;
         
         -V)
@@ -502,7 +497,6 @@ wayland_screencapture () {
             $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
             notifications "Recording stopped! Saved locally."
             find_file "$2"
-            #push_logic
         ;;
 
 
@@ -536,13 +530,13 @@ kde_screencapture () {
         -I)
             $capture -rbn -o "$2"
             find_file "$2"
-            echo "Interactive saved locally"
+            echo "Screenshot saved locally!"
         ;;
 
         -A)
             $capture -f -o "$2"
             find_file
-            echo "Entire desktop saved locally"
+            echo "Screenshot saved locally!"
 	      ;;
 	
 	      -V)
@@ -550,7 +544,7 @@ kde_screencapture () {
             $kde_vid_capture -bnp -R r -o "$2"
             notifications "Recording stopped!"
             find_file "$2"
-            echo "Video saved locally"
+            echo "Video saved locally!"
         ;;
 
     esac
@@ -590,13 +584,13 @@ x11_screencapture () {
         -I)
             $capture -s "$2"
             find_file "$2"
-            echo "Interactive saved locally."
+            echo "Screenshot saved locally!"
         ;;
 
         -A)
             $capture "$2"
             find_file
-            echo "Whole desktop saved locally"
+            echo "Screenshot saved locally!"
         ;;
         
         -V)
@@ -611,7 +605,7 @@ x11_screencapture () {
                   -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
                 notifications "Recording stopped!"
                 find_file "$2"
-                echo "Video capture saved locally"
+                echo "Video saved locally!"
             fi
         ;;
     esac
