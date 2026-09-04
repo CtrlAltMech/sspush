@@ -435,11 +435,15 @@ mac_screencapture () {
         -I)
             $capture -i "$2"
             find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
 
         -A)
             $capture "$2"
             find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
 
         -V)
@@ -481,13 +485,15 @@ wayland_screencapture () {
         -I)
             $capture -g "$(slurp)" "$2"
             find_file "$2"
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
         
         -A)
             $capture "$2"
             find_file
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
         
         -V)
@@ -530,21 +536,22 @@ kde_screencapture () {
         -I)
             $capture -rbn -o "$2"
             find_file "$2"
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
 
         -A)
             $capture -f -o "$2"
             find_file
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
 	      ;;
 	
 	      -V)
             notifications "Recording started..."
             $kde_vid_capture -bnp -R r -o "$2"
-            notifications "Recording stopped!"
+            notifications "Recording stopped! Saved locally!"
             find_file "$2"
-            echo "Video saved locally!"
         ;;
 
     esac
@@ -584,13 +591,15 @@ x11_screencapture () {
         -I)
             $capture -s "$2"
             find_file "$2"
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
 
         -A)
             $capture "$2"
             find_file
-            echo "Screenshot saved locally!"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
         ;;
         
         -V)
@@ -603,9 +612,8 @@ x11_screencapture () {
                 notifications "Recording started..."
                 $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
                   -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
-                notifications "Recording stopped!"
+                notifications "Recording stopped! Saved locally!"
                 find_file "$2"
-                echo "Video saved locally!"
             fi
         ;;
     esac
