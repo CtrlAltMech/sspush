@@ -74,7 +74,7 @@ main () {
     while getopts ':iahvIAV' OPTION;  
     do
         case "$OPTION" in
-            i) # Interactive image screencapture option
+            i) # Interactive image screencapture option, pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 0
@@ -83,7 +83,7 @@ main () {
                 fi
             ;;
             
-            a) # Image capture entire desktop
+            a) # Image capture entire desktop, pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -92,7 +92,7 @@ main () {
                 fi
             ;;
 
-            v) # Capture video of current screen on macOS, interactive mode on Linux distros.
+            v) # Capture video of current screen on macOS, interactive mode on Linux distros. Pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -102,7 +102,7 @@ main () {
             ;;
 
             I)
-              # Interactive, but saved local only.
+              # Interactive, save locally only.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -112,7 +112,7 @@ main () {
             ;;
             
             A)
-              # Capture whole screen, but saved local only.
+              # Capture whole screen, save locally only.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -122,7 +122,7 @@ main () {
             ;;
 
             V)
-              # Capture video and save locally.
+              # Capture video, save locally only.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
