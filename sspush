@@ -71,10 +71,10 @@ main () {
     fi
 
     # Option branch logic
-    while getopts ':iahv' OPTION;  
+    while getopts ':iahvIAV' OPTION;  
     do
         case "$OPTION" in
-            i) # Interactive image screencapture option
+            i) # Interactive image screencapture option, pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 0
@@ -83,7 +83,7 @@ main () {
                 fi
             ;;
             
-            a) # Image capture entire desktop
+            a) # Image capture entire desktop, pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
@@ -92,12 +92,42 @@ main () {
                 fi
             ;;
 
-            v) # Capture video of current screen on macOS, interactive mode on Linux distros.
+            v) # Capture video of current screen on macOS, interactive mode on Linux distros. Pushed to remote server.
                 if [[ "$#" -ge 3 ]]; then
                     help_msg
                     exit 1
                 else
                     screen_handler "$1" "$2"
+                fi
+            ;;
+
+            I)
+              # Interactive, save locally only.
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  screen_handler "$1" "$2"
+                fi
+            ;;
+            
+            A)
+              # Capture whole screen, save locally only.
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  screen_handler "$1" "$2"
+                fi
+            ;;
+
+            V)
+              # Capture video, save locally only.
+                if [[ "$#" -ge 3 ]]; then
+                    help_msg
+                    exit 1
+                else
+                  screen_handler "$1" "$2"
                 fi
             ;;
 
@@ -117,13 +147,16 @@ main () {
 
 # Help message
 help_msg () {
-    echo "Syntax: $(basename "$0") [-i|-a|-v]  /optional/file/path/"
+    echo "Syntax: $(basename "$0") [-i|-a|-v|-I|-A|-V]  /optional/file/path/"
     echo "options:"
     echo "-c | --make-conf    Generate an empty config file and open it in your \$EDITOR"
     echo "-h | --help         Show this help message."
     echo "-i    Interactive mode, select portion of screen to capture and push to server."
     echo "-a    Capture everything on screen and push to server."
-    echo "-v    Capture video of current screen (macOS does full screen, Linux uses slop for interactive screencapture)."
+    echo "-v    Capture video of current screen and push to server. (macOS does full screen, Linux uses slop for interactive screencapture)."
+    echo "-I    Interactive mode, select portion of screen to capture and save locally."
+    echo "-A    Capture everything on screen and save locally." 
+    echo "-V    Capture video of current screen and save locally. (macOS does full screen, Linux uses slop for interactive screencapture)."
 }
 
 # Checks for config file, prompt to create if none exists.
@@ -238,7 +271,7 @@ path_verify () {
     fi
 }
 
-# Checks which display server is running and sets proper capture utility
+# Checks which display server or desktop is running and sets proper capture utility
 display_serv_check () {
     if [[ "$XDG_SESSION_DESKTOP" == "KDE" ]] || [[ "$XDG_SESSION_DESKTOP" == "plasma" ]]; then
         disp_server="KDE"
@@ -295,20 +328,20 @@ dep_check () {
         local img_capture=$macos_capture # TODO: Just a placeholder, macOS comes with this by default on recent versions. Fix later.
     fi
 
-    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ -a|-i ]]; then
+    if [[ ! -x $(which "$img_capture") ]] && [[ "$1" =~ @(-a|-i|-A|-I) ]]; then
         echo -e "${RED}Capture utility $img_capture not found! ${ENDCOLOR}"
         echo "$img_capture is required on $disp_server to capture images."
         echo "Aborting..."
         exit 1
 
-    elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ -v ]]; then
+      elif [[ $disp_server == "wayland" ]] && [[ "$1" =~ @(-v|-V) ]]; then
       if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
           echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
           echo "$vid_capture is required on wayland to capture video."
           echo "Aborting..."
           exit 1
       fi
-    elif [[ $disp_server == "KDE" ]] && [[ "$1" =~ -v ]]; then
+    elif [[ $disp_server == "KDE" ]] && [[ "$1" =~ @(-v|-V) ]]; then
       if [[ ! -x $(which "$vid_capture" 2>/dev/null) ]]; then
           echo -e "${RED}Video capture utility $vid_capture not found! ${ENDCOLOR}"
           echo "$vid_capture is required on KDE to capture video."
@@ -369,7 +402,7 @@ screen_handler () {
     if [[ $disp_server == "KDE" ]]; then
       extension=".webm"
     fi
-    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]]; then 
+    if [[ -z "$filepath" ]] && [[ "$arg" != "-v" ]] && [[ "$arg" != "-V" ]]; then 
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S").png";
     elif [[ -z "$filepath" ]]; then
         filepath=$SSFILEPATH"Screencapture_$(date +"%Y%m%d_%H%M%S")$extension";
@@ -432,6 +465,28 @@ mac_screencapture () {
             push_logic
         ;;
 
+        -I)
+            $capture -i "$2"
+            find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+
+        -A)
+            $capture "$2"
+            find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+
+        -V)
+            # TODO: Add optional desktop notification when recording starts and when it stops.
+            notifications "Recording started..."
+            $vid_capture -v "$2"
+            notifications "Recording stopped!"
+            find_file "$2"
+        ;;
+
     esac
 }
 
@@ -449,7 +504,7 @@ wayland_screencapture () {
             find_file
             push_logic
         ;;
-
+        
         -v)
             # TODO: Add debug option to not send output to /dev/null. Maybe?
             echo "Press 'CTRL + c' to end recording..."
@@ -459,6 +514,30 @@ wayland_screencapture () {
             find_file "$2"
             push_logic
         ;;
+        
+        -I)
+            $capture -g "$(slurp)" "$2"
+            find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+        
+        -A)
+            $capture "$2"
+            find_file
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+        
+        -V)
+            # TODO: Add debug option to not send output to /dev/null. Maybe?
+            echo "Press 'CTRL + c' to end recording..."
+            notifications "Recording started..."
+            $vid_capture -g "$(slurp)" -x yuv420p -f "$2" &> /dev/null # No hidebanner option in wf-recorder
+            notifications "Recording stopped! Saved locally."
+            find_file "$2"
+        ;;
+
 
     esac
 }
@@ -476,9 +555,9 @@ kde_screencapture () {
             $capture -f -o "$2"
             find_file
             push_logic
-	    ;;
+	      ;;
 	
-	    -v)
+	      -v)
               notifications "Recording started..."
 	            $kde_vid_capture -bnp -R r -o "$2"
               notifications "Recording stopped!"
@@ -486,6 +565,28 @@ kde_screencapture () {
 	            push_logic
 
         ;;
+
+        -I)
+            $capture -rbn -o "$2"
+            find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+
+        -A)
+            $capture -f -o "$2"
+            find_file
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+	      ;;
+	
+	      -V)
+            notifications "Recording started..."
+            $kde_vid_capture -bnp -R r -o "$2"
+            notifications "Recording stopped! Saved locally!"
+            find_file "$2"
+        ;;
+
     esac
 } 
 
@@ -502,23 +603,51 @@ x11_screencapture () {
             $capture "$2"
             find_file
             push_logic
-	    ;;
-	
-	    -v)
-          local screen_sel=$(slop -f "%x %y %w %h")
-	        read -r X Y W H < <(echo $screen_sel)
-	        if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
-	        	exit 1
-	        else
-	            echo "Press 'q' to end recording..."
+        ;;
+        
+        -v)
+            local screen_sel=$(slop -f "%x %y %w %h")
+            read -r X Y W H < <(echo $screen_sel)
+            if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
+              exit 1
+            else
+                echo "Press 'q' to end recording..."
                 notifications "Recording started..."
-	            $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
-                -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+                $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+                  -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
                 notifications "Recording stopped!"
-	            find_file "$2"
-	            push_logic
-	        fi
+                find_file "$2"
+                push_logic
+            fi
+        ;;
 
+        -I)
+            $capture -s "$2"
+            find_file "$2"
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+
+        -A)
+            $capture "$2"
+            find_file
+            notifications "Screenshot saved!"
+            echo -e "${GREEN}Screenshot saved!${ENDCOLOR}"
+        ;;
+        
+        -V)
+            local screen_sel=$(slop -f "%x %y %w %h")
+            read -r X Y W H < <(echo $screen_sel)
+            if [[ -z "$X" ]]; then # Exit if you don't capture the section you want to record properly.
+              exit 1
+            else
+                echo "Press 'q' to end recording..."
+                notifications "Recording started..."
+                $vid_capture -hide_banner -loglevel error -f x11grab -s "$W"x"$H" -framerate 60 -i $DISPLAY.0+$X,$Y \
+                  -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset ultrafast -pix_fmt yuv420p "$2"
+                notifications "Recording stopped! Saved locally!"
+                find_file "$2"
+            fi
         ;;
     esac
 } 
