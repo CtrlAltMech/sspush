@@ -2,7 +2,7 @@
 
 sspush is intended to make it simple to upload and share screenshots/images/files with no intervention from the user via a public link that points to a server you own.
 
-![Example2](https://github.com/CtrlAltMech/sspush/assets/7492741/417a23ec-5c21-456e-9036-c2b68aebeef8)
+![Example2](https://github.com/user-attachments/assets/9cfc36e4-ed1f-4a8c-a3fd-fa799c7c7927)
 
 ## Requirements
 
@@ -79,10 +79,13 @@ CLIPBOARD="clipboard"
 
 ## Flags :triangular_flag_on_post:
 - `sspush` - Will post most recent file/screencapture in screenshots folder specified in config file. 
-- `sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and post.
-- `sspush -a <optional filename>` - Captures everything on all screens and posts.
+- `sspush -i <optional filename>` - Will start interactive mode allowing you to select a portion of the screen and upload it.
+- `sspush -a <optional filename>` - Captures everything on all screens and uploads it.
+- `sspush -v <optional filename>` - Captures video (Interactive capture ONLY on linux, Fullscreen ONLY on macOS) and uploads it.
+- `sspush -I <optional filename>` - Will start interactive mode allowing you to select a portion of the screen without uploading.
+- `sspush -A <optional filename>` - Captures everything on all screens without uploading.
+- `sspush -V <optional filename>` - Captures video (Interactive capture ONLY on linux, Fullscreen ONLY on macOS) without uploading.
 - `sspush -h <optional filename>` - Prints syntax help out to terminal.
-- `sspush -v <optional filename>` - Captures video (Interactive capture ONLY on linux, Fullscreen ONLY on macOS)
 
 ## Contributing :handshake:
 I would love to hear if there are any bugs or a requested feature! :heart:
@@ -103,7 +106,6 @@ The sspush bash script is released under the GNU General Public License v3.0. Se
 - Dependency check (Setup for a couple of dependencies, need to work in the rest of them)
 - General code refactoring.
 - Configuration sanitization.
-- Format more according to [Google style guide](https://google.github.io/styleguide/shellguide.html#s7-naming-conventions)
 - Debug flag (for the video capture mainly, but other stuff as well.)
 - Issue with portrait monitor video capture being treated like landscape mode in Wayland. Issue listed [here](https://github.com/ammen99/wf-recorder/issues/3). Needs a fix.
 
