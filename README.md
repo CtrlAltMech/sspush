@@ -1,6 +1,6 @@
 # sspush - A screencapture and file sharing utility
 
-sspush is intended to make it simple to upload and share screenshots/images/files with no intervention from the user via a public link that points to a server you own.
+sspush is the all-in-one screenshot and video capture utility that can either handle captures locally or push to a remote server you own and copy the link to your clipboard.
 
 ![Example2](https://github.com/user-attachments/assets/9cfc36e4-ed1f-4a8c-a3fd-fa799c7c7927)
 
@@ -33,7 +33,7 @@ To use the sspush, follow the instructions below:
 
 ## Usage
 
-1. On first use (when no config file is present) you will be prompted to generate an empty configuration file.
+1. On first use (when no config file is present) you will be prompted to generate an empty configuration file. Default config location at $HOME/.config/sspushrc.
 
 ```
 # Config file for sspush
@@ -76,6 +76,8 @@ CLIPBOARD="clipboard"
 2. Once the configuration file is created your editor should open to edit the file.
 3. When the configuration file is filled out run the command again to push your file.
 4. A link will be copied to your clipboard as well as printed out to the terminal.
+
+*Screenshots or videos taken with the local only flag work as expected. Capture is taken and saved only*
 
 ## Flags :triangular_flag_on_post:
 - `sspush` - Will post most recent file/screencapture in screenshots folder specified in config file. 
