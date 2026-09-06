@@ -77,7 +77,7 @@ CLIPBOARD="clipboard"
 3. When the configuration file is filled out run the command again to push your file.
 4. A link will be copied to your clipboard as well as printed out to the terminal.
 
-*Screenshots or videos taken with the local only flag work as expected. Capture is taken and saved only*
+*Screenshots or videos taken with the local only flag work as expected. Capture is taken and saved only.*
 
 ## Flags :triangular_flag_on_post:
 - `sspush` - Will post most recent file/screencapture in screenshots folder specified in config file. 
